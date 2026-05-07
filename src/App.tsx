@@ -192,9 +192,15 @@ export default function App() {
                 <Route path="/embed/restock" element={<div className="bg-[#050505] min-h-screen text-white"><LotteryTerminal initialTerminal="TCG_RESTOCK" /></div>} />
                 <Route path="/embed/sales" element={<div className="bg-[#050505] min-h-screen text-white"><LotteryTerminal initialTerminal="SALES" /></div>} />
 
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </>
-            )}
+            {/* UNIVERSAL EMBED ROUTE (No Header/Nav) */}
+            <Route path="/embed" element={
+              <div className="p-4 md:p-8 bg-transparent min-h-screen">
+                <LotteryTerminal />
+              </div>
+            } />
+
+            {/* Catch-all */}
+            <Route path="*" element={<Navigate to={isPipelineMode ? "/admin" : "/"} replace />} />
           </Routes>
         </Router>
       </ThemeProvider>
