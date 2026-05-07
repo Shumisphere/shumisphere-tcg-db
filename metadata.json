@@ -1,0 +1,6 @@
+{
+  "name": "LotteryIQ: TCG Intelligence",
+  "description": "Production-ready Bloomberg-style terminal for Japanese TCG, Pokémon, and anime lottery tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["AI Data Extraction", "Automated Scraping", "Japanese Date Parsing"]
+}

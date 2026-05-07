@@ -1,0 +1,136 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Source {
+  id              String         @id @default(cuid())
+  sourceName      String
+  sourceType      String         // 'RSS', 'SITEMAP', 'SCRAPE', 'TWITTER'
+  domain          String
+  rssUrl          String?
+  sitemapUrl      String?
+  crawlFrequency  Int            @default(3600) // seconds
+  active          Boolean        @default(true)
+  notes           String?
+  lastCrawledAt   DateTime?
+  lastAttemptedAt DateTime?
+  lastErrorAt     DateTime?
+  lastError       String?
+  lotteryEvents   LotteryEvent[]
+  rawDocuments    RawDocument[]
+}
+
+model Store {
+  id               String         @id @default(cuid())
+  storeName        String
+  aliases          String?        // Comma separated list of names
+  region           String?        // 'JP-WIDE', 'TOKYO', etc
+  tags             String?        // JSON or comma separated
+  sourcePriority   Int            @default(0)
+  lotteryEvents    LotteryEvent[]
+}
+
+model Product {
+  id              String         @id @default(cuid())
+  productName     String
+  franchise       String?        // 'Pokemon', 'Bandai', etc
+  productType     String?        // 'TCG', 'Figure', etc
+  releaseDate     DateTime?
+  aliases         String?
+  tags            String?
+  tcgCategoryId   String?
+  tcgCategory     TcgCategory?   @relation(fields: [tcgCategoryId], references: [id], onDelete: Cascade)
+  lotteryEvents   LotteryEvent[]
+}
+
+model TcgCategory {
+  id          String    @id @default(cuid())
+  name        String
+  tcgPlayerId Int?
+  sets        Set[]
+  products    Product[]
+}
+
+model Set {
+  id             String         @id @default(cuid())
+  setName        String
+  releaseDate    DateTime?
+  tcgCategoryId  String
+  tcgCategory    TcgCategory    @relation(fields: [tcgCategoryId], references: [id], onDelete: Cascade)
+  tcgPlayerId    Int?
+  lotteryEvents  LotteryEvent[]
+}
+
+model LotteryEvent {
+  id                String    @id @default(cuid())
+  productId        String
+  product          Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  storeId          String
+  store            Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  sourceId         String
+  source           Source    @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  setId            String?
+  set              Set?      @relation(fields: [setId], references: [id], onDelete: Cascade)
+  category         String    @default("TCG_LOTTERY") // 'BONBON', 'TCG_LOTTERY', 'TCG_RESTOCK', 'SALES'
+  inventoryStatus  String?   // 'AVAILABLE', 'UNAVAILABLE', 'NO_INFO' - for Sales/Restock
+  
+  status           String    // 'UPCOMING', 'ACTIVE', 'RESULT_PENDING', 'CLOSED'
+  applicationStart DateTime?
+  applicationEnd   DateTime?
+  resultDate       DateTime?
+  purchaseStart    DateTime?
+  purchaseEnd      DateTime?
+  
+  region           String?
+  notes            String?
+  imageUrl         String?
+  sourceUrl        String
+  rawContent       String?   // Raw text extracted
+  confidenceScore  Float     @default(0)
+  manuallyVerified Boolean   @default(false)
+  
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  
+  generatedContent GeneratedContent?
+}
+
+model RawDocument {
+  id           String   @id @default(cuid())
+  sourceId     String
+  source       Source   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  fetchedUrl   String
+  htmlContent  String?
+  textContent  String?
+  fetchedAt    DateTime @default(now())
+  checksum     String
+}
+
+model GeneratedContent {
+  id           String       @id @default(cuid())
+  eventId      String       @unique
+  lotteryEvent LotteryEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  cardJson     String?      // Templates can use this
+  snippetHtml  String?
+  tableHtml    String?
+  tweetText    String?
+  apiPayload   String?
+}
+
+model SystemConfig {
+  id            String   @id @default("singleton")
+  theme         String   @default("{}") // JSON string for theme settings
+  layout        String   @default("{}") // JSON string for layout settings
+  featuredImage String?  // JSON: { url, caption, linkUrl, enabled }
+  ads           String?  // JSON array: [{ id, imageUrl, linkUrl, label, position, active }]
+  updatedAt     DateTime @updatedAt
+}

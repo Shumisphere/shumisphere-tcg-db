@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($path = \"C:\\\\Users\\\\dwain\\\\OneDrive\\\\Documents\\\\lotteryiq_-tcg-intelligence\"; [System.IO.Directory]::GetFileSystemEntries\\($path\\) | ForEach-Object { $_ })",
+      "Bash(npm install *)",
+      "Bash(npx prisma *)",
+      "Bash(npx tsc *)",
+      "Bash(npx tsx *)"
+    ]
+  }
+}
