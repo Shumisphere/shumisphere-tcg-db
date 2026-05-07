@@ -147,12 +147,12 @@ export default function App() {
     <ThemeProvider>
         <Router>
           <Routes>
-            {/* UNIVERSAL EMBED ROUTE (No Header/Nav) - Priority */}
-            <Route path="/embed" element={
-              <div className="p-4 md:p-8 bg-transparent min-h-screen">
-                <LotteryTerminal />
-              </div>
-            } />
+            {/* UNIVERSAL EMBED ROUTES (No Header/Nav) */}
+            <Route path="/embed" element={<div className="p-4 bg-transparent min-h-screen"><LotteryTerminal /></div>} />
+            <Route path="/embed/tcg" element={<div className="p-4 bg-transparent min-h-screen"><LotteryTerminal initialTerminal="TCG_LOTTERY" /></div>} />
+            <Route path="/embed/bonbon" element={<div className="p-4 bg-transparent min-h-screen"><LotteryTerminal initialTerminal="BONBON" /></div>} />
+            <Route path="/embed/restock" element={<div className="p-4 bg-transparent min-h-screen"><LotteryTerminal initialTerminal="TCG_RESTOCK" /></div>} />
+            <Route path="/embed/sales" element={<div className="p-4 bg-transparent min-h-screen"><LotteryTerminal initialTerminal="SALES" /></div>} />
 
             {/* TERMINAL MODE (Cloudflare) */}
             {isTerminalMode && (
@@ -192,12 +192,6 @@ export default function App() {
                         <AdminDashboard />
                     </MainLayout>
                 } />
-                
-                {/* Embed Routes */}
-                <Route path="/embed/tcg" element={<div className="bg-[#050505] min-h-screen text-white"><LotteryTerminal initialTerminal="TCG_LOTTERY" /></div>} />
-                <Route path="/embed/bonbon" element={<div className="bg-[#050505] min-h-screen text-white"><LotteryTerminal initialTerminal="BONBON" /></div>} />
-                <Route path="/embed/restock" element={<div className="bg-[#050505] min-h-screen text-white"><LotteryTerminal initialTerminal="TCG_RESTOCK" /></div>} />
-                <Route path="/embed/sales" element={<div className="bg-[#050505] min-h-screen text-white"><LotteryTerminal initialTerminal="SALES" /></div>} />
               </>
             )}
 
