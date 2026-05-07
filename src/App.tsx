@@ -139,28 +139,62 @@ export default function App() {
     }
   };
 
+  const appMode = import.meta.env.VITE_APP_MODE;
+  const isTerminalMode = appMode === 'terminal';
+  const isPipelineMode = appMode === 'pipeline';
+
   return (
     <ThemeProvider>
         <Router>
           <Routes>
-            <Route path="/" element={
-                <MainLayout stats={stats} loading={loading} backendDown={backendDown}>
-                    <LotteryTerminal />
-                </MainLayout>
-            } />
-            <Route path="/admin" element={
-                <MainLayout stats={stats} loading={loading} backendDown={backendDown}>
-                    <AdminDashboard />
-                </MainLayout>
-            } />
-            
-            {/* Minimal Embed Routes */}
-            <Route path="/embed/tcg" element={<div className="bg-[#050505] min-h-screen text-white"><LotteryTerminal initialTerminal="TCG_LOTTERY" /></div>} />
-            <Route path="/embed/bonbon" element={<div className="bg-[#050505] min-h-screen text-white"><LotteryTerminal initialTerminal="BONBON" /></div>} />
-            <Route path="/embed/restock" element={<div className="bg-[#050505] min-h-screen text-white"><LotteryTerminal initialTerminal="TCG_RESTOCK" /></div>} />
-            <Route path="/embed/sales" element={<div className="bg-[#050505] min-h-screen text-white"><LotteryTerminal initialTerminal="SALES" /></div>} />
+            {/* TERMINAL MODE (Cloudflare) */}
+            {isTerminalMode && (
+              <>
+                <Route path="/" element={
+                    <MainLayout stats={stats} loading={loading} backendDown={backendDown}>
+                        <LotteryTerminal />
+                    </MainLayout>
+                } />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </>
+            )}
 
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* PIPELINE MODE (Railway) */}
+            {isPipelineMode && (
+              <>
+                <Route path="/" element={<Navigate to="/admin" replace />} />
+                <Route path="/admin" element={
+                    <MainLayout stats={stats} loading={loading} backendDown={backendDown}>
+                        <AdminDashboard />
+                    </MainLayout>
+                } />
+                <Route path="*" element={<Navigate to="/admin" replace />} />
+              </>
+            )}
+
+            {/* DEVELOPMENT MODE (Both visible) */}
+            {!appMode && (
+              <>
+                <Route path="/" element={
+                    <MainLayout stats={stats} loading={loading} backendDown={backendDown}>
+                        <LotteryTerminal />
+                    </MainLayout>
+                } />
+                <Route path="/admin" element={
+                    <MainLayout stats={stats} loading={loading} backendDown={backendDown}>
+                        <AdminDashboard />
+                    </MainLayout>
+                } />
+                
+                {/* Embed Routes */}
+                <Route path="/embed/tcg" element={<div className="bg-[#050505] min-h-screen text-white"><LotteryTerminal initialTerminal="TCG_LOTTERY" /></div>} />
+                <Route path="/embed/bonbon" element={<div className="bg-[#050505] min-h-screen text-white"><LotteryTerminal initialTerminal="BONBON" /></div>} />
+                <Route path="/embed/restock" element={<div className="bg-[#050505] min-h-screen text-white"><LotteryTerminal initialTerminal="TCG_RESTOCK" /></div>} />
+                <Route path="/embed/sales" element={<div className="bg-[#050505] min-h-screen text-white"><LotteryTerminal initialTerminal="SALES" /></div>} />
+
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </>
+            )}
           </Routes>
         </Router>
       </ThemeProvider>
