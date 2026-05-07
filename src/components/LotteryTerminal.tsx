@@ -83,7 +83,7 @@ export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON
         setFetchError(null);
         const cacheKey = `${CACHE_KEY}_${terminal || ""}_${category || ""}_${set || ""}`;
         try {
-            let url = "/api/lotteries";
+            let url = `${API_BASE_URL}/api/lotteries`;
             const params = new URLSearchParams();
             if (terminal) params.append("category", terminal);
             if (category) params.append("tcgCategoryId", category);
