@@ -28,10 +28,10 @@ function Header() {
         <div className="flex items-center justify-between w-full md:w-auto">
           <Link to="/" className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-700 rounded flex items-center justify-center font-bold text-white shadow-lg">
-              <span className="text-sm">L</span>
+              <span className="text-sm">S</span>
             </div>
             <h1 className="text-sm md:text-lg font-semibold tracking-tight uppercase text-white">
-              Lottery <span className="text-indigo-400">Intelligence</span> 
+              Shumi<span className="text-indigo-400">sphere</span> 
             </h1>
           </Link>
         </div>
@@ -45,7 +45,7 @@ function Header() {
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-3">
                 <div className="text-right">
-                    <div className="text-[10px] font-bold text-white uppercase leading-none">Local Admin</div>
+                    <div className="text-[10px] font-bold text-white uppercase leading-none">Dwain</div>
                     <div className="text-[8px] text-gray-500 font-mono uppercase tracking-widest">Administrator</div>
                 </div>
             </div>

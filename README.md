@@ -2,11 +2,9 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Run and deploy your AI Studio app
+# Shumisphere TCG Intelligence
 
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/ef4b476a-7ecc-45f6-b4d4-cc97a017c174
+Shumisphere TCG Intelligence is a production-ready dashboard for tracking Japanese TCG lotteries, restocks, and sales signals.
 
 ## Run Locally
 

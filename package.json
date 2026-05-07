@@ -1,5 +1,6 @@
 {
-  "name": "lotteryiq-tcg-intelligence",
+  "name": "shumisphere-tcg-intelligence",
+  "author": "Dwain",
   "private": true,
   "version": "0.0.0",
   "type": "module",
