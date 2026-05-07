@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { API_BASE_URL } from '../config';
 
 interface ThemeConfig {
   primaryColor: string;
@@ -63,7 +64,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const fetchConfig = async () => {
     try {
-      const res = await fetch('/api/config');
+      const res = await fetch(`${API_BASE_URL}/api/config`);
       if (res.ok) {
         const data = await res.json();
         setConfig(data);
@@ -98,7 +99,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateConfig = async (newConfig: SystemConfig) => {
     try {
-      const res = await fetch('/api/config', {
+      const res = await fetch(`${API_BASE_URL}/api/config`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newConfig)

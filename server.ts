@@ -304,6 +304,86 @@ async function startServer() {
     });
 
     // ──────────────────────────────────────────────────────────────
+    // System Config / Theme
+    // ──────────────────────────────────────────────────────────────
+    app.get("/api/config", async (_req, res) => {
+      try {
+        let config = await prisma.systemConfig.findUnique({
+          where: { id: "singleton" }
+        });
+
+        if (!config) {
+          // Initialize default if missing
+          config = await prisma.systemConfig.create({
+            data: { 
+              id: "singleton",
+              theme: JSON.stringify({
+                primaryColor: "#6366f1",
+                backgroundColor: "#0a0a0b",
+                headerColor: "#0e0e0f",
+                sidebarColor: "#0c0c0d",
+                borderColor: "#2a2a2c",
+                accentColor: "#6366f1",
+                successColor: "#00ff9d",
+                fontSans: "Outfit",
+                fontMono: "JetBrains Mono",
+                cardRadius: "0.75rem",
+                glowIntensity: "0.5",
+                backgroundImage: ""
+              }),
+              layout: JSON.stringify({
+                sidebarEnabled: true,
+                defaultView: 'grid'
+              })
+            }
+          });
+        }
+
+        res.json({
+          theme: JSON.parse(config.theme),
+          layout: JSON.parse(config.layout),
+          featuredImage: config.featuredImage ? JSON.parse(config.featuredImage) : null,
+          ads: config.ads ? JSON.parse(config.ads) : []
+        });
+      } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: "Failed to fetch config" });
+      }
+    });
+
+    app.post("/api/config", async (req, res) => {
+      try {
+        const { theme, layout, featuredImage, ads } = req.body;
+        const config = await prisma.systemConfig.upsert({
+          where: { id: "singleton" },
+          update: {
+            theme: JSON.stringify(theme),
+            layout: JSON.stringify(layout),
+            featuredImage: featuredImage ? JSON.stringify(featuredImage) : undefined,
+            ads: ads ? JSON.stringify(ads) : undefined
+          },
+          create: {
+            id: "singleton",
+            theme: JSON.stringify(theme),
+            layout: JSON.stringify(layout),
+            featuredImage: featuredImage ? JSON.stringify(featuredImage) : undefined,
+            ads: ads ? JSON.stringify(ads) : undefined
+          }
+        });
+
+        res.json({
+          theme: JSON.parse(config.theme),
+          layout: JSON.parse(config.layout),
+          featuredImage: config.featuredImage ? JSON.parse(config.featuredImage) : null,
+          ads: config.ads ? JSON.parse(config.ads) : []
+        });
+      } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: "Failed to update config" });
+      }
+    });
+
+    // ──────────────────────────────────────────────────────────────
     // Sources
     // ──────────────────────────────────────────────────────────────
     app.get("/api/sources", async (_req, res) => {
