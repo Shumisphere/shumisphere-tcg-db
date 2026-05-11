@@ -187,7 +187,19 @@ async function startServer() {
     // ──────────────────────────────────────────────────────────────
     app.post("/api/ingest", async (req, res) => {
       try {
-        const { store_name, set_name, lottery_date, conditions, link, region } = req.body;
+        const { 
+          store_name, 
+          set_name, 
+          lottery_date, 
+          application_end,
+          result_date,
+          purchase_start,
+          purchase_end,
+          conditions, 
+          link, 
+          region,
+          category 
+        } = req.body;
 
         // Resolve or create store
         let store = await fuzzyFindStore(store_name || "Unknown Store");
@@ -225,12 +237,17 @@ async function startServer() {
             productId:        product.id,
             storeId:          store.id,
             sourceId:         manualSource.id,
-            category:         "TCG_LOTTERY",
+            category:         category || "TCG_LOTTERY",
             status:           "ACTIVE",
             applicationStart: lottery_date ? new Date(lottery_date) : null,
+            applicationEnd:   application_end ? new Date(application_end) : null,
+            resultDate:       result_date ? new Date(result_date) : null,
+            purchaseStart:    purchase_start ? new Date(purchase_start) : null,
+            purchaseEnd:      purchase_end ? new Date(purchase_end) : null,
             sourceUrl:        link || "(MANUAL)",
             notes:            conditions || null,
-            confidenceScore:  0.85,
+            region:           region || null,
+            confidenceScore:  0.95,
             manuallyVerified: false,
             inventoryStatus:  "NO_INFO",
           },
@@ -255,21 +272,23 @@ async function startServer() {
 
     app.patch("/api/lotteries/:id", async (req, res) => {
       try {
-        const { applicationStart, applicationEnd, resultDate, purchaseStart, purchaseEnd, notes, status, inventoryStatus, category, imageUrl } = req.body;
+        const { applicationStart, applicationEnd, resultDate, purchaseStart, purchaseEnd, notes, status, inventoryStatus, category, imageUrl, manuallyVerified } = req.body;
+        const data: any = {};
+        if (applicationStart !== undefined) data.applicationStart = applicationStart ? new Date(applicationStart) : null;
+        if (applicationEnd !== undefined) data.applicationEnd = applicationEnd ? new Date(applicationEnd) : null;
+        if (resultDate !== undefined) data.resultDate = resultDate ? new Date(resultDate) : null;
+        if (purchaseStart !== undefined) data.purchaseStart = purchaseStart ? new Date(purchaseStart) : null;
+        if (purchaseEnd !== undefined) data.purchaseEnd = purchaseEnd ? new Date(purchaseEnd) : null;
+        if (notes !== undefined) data.notes = notes;
+        if (status !== undefined) data.status = status;
+        if (inventoryStatus !== undefined) data.inventoryStatus = inventoryStatus;
+        if (category !== undefined) data.category = category;
+        if (imageUrl !== undefined) data.imageUrl = imageUrl;
+        if (manuallyVerified !== undefined) data.manuallyVerified = manuallyVerified;
         const updated = await prisma.lotteryEvent.update({
           where: { id: req.params.id },
-          data: {
-            applicationStart: applicationStart ? new Date(applicationStart) : null,
-            applicationEnd: applicationEnd ? new Date(applicationEnd) : null,
-            resultDate: resultDate ? new Date(resultDate) : null,
-            purchaseStart: purchaseStart ? new Date(purchaseStart) : null,
-            purchaseEnd: purchaseEnd ? new Date(purchaseEnd) : null,
-            notes,
-            status,
-            inventoryStatus,
-            category,
-            imageUrl
-          }
+          data,
+          include: { product: { include: { tcgCategory: true } }, store: true, set: true }
         });
         res.json(updated);
       } catch (error) {
@@ -625,53 +644,23 @@ async function startServer() {
     });
 
     // ──────────────────────────────────────────────────────────────
-    // Configuration
+    // Frontend Sync (Cloudflare Pages deploy hook)
     // ──────────────────────────────────────────────────────────────
-    const DEFAULT_THEME = {
-      primaryColor: "#6366f1",
-      backgroundColor: "#0a0a0b",
-      headerColor: "#0e0e0f",
-      sidebarColor: "#0c0c0d",
-      borderColor: "#2a2a2c",
-      accentColor: "#6366f1",
-      successColor: "#00ff9d",
-      fontSans: "Outfit",
-      fontMono: "JetBrains Mono",
-      cardRadius: "0.75rem",
-      glowIntensity: "0.5",
-    };
-
-    app.get("/api/config", async (_req, res) => {
-      try {
-        let config = await prisma.systemConfig.findUnique({ where: { id: "singleton" } });
-        if (!config) {
-          config = await prisma.systemConfig.create({
-            data: {
-              id: "singleton",
-              theme: JSON.stringify(DEFAULT_THEME),
-              layout: JSON.stringify({ sidebarEnabled: true, defaultView: "grid" }),
-            },
-          });
-        }
-        res.json({ theme: JSON.parse(config.theme), layout: JSON.parse(config.layout) });
-      } catch (error) {
-        console.error("Config error:", error);
-        res.status(500).json({ error: "Failed to fetch config" });
-      }
-    });
-
-    app.post("/api/config", async (req, res) => {
-      try {
-        const { theme, layout } = req.body;
-        const config = await prisma.systemConfig.upsert({
-          where: { id: "singleton" },
-          update: { theme: JSON.stringify(theme), layout: JSON.stringify(layout) },
-          create: { id: "singleton", theme: JSON.stringify(theme), layout: JSON.stringify(layout) },
+    app.post("/api/sync-frontend", async (_req, res) => {
+      const hookUrl = process.env.CLOUDFLARE_DEPLOY_HOOK;
+      if (!hookUrl) {
+        return res.status(200).json({
+          success: true,
+          message: "No deploy hook configured. Frontend reads live from API — no redeploy needed.",
         });
-        res.json({ theme: JSON.parse(config.theme), layout: JSON.parse(config.layout) });
-      } catch (error) {
-        console.error("Update config error:", error);
-        res.status(500).json({ error: "Failed to update config" });
+      }
+      try {
+        const response = await fetch(hookUrl, { method: "POST" });
+        if (!response.ok) throw new Error(`Deploy hook returned HTTP ${response.status}`);
+        res.json({ success: true, message: "Cloudflare Pages deployment triggered." });
+      } catch (err: any) {
+        console.error("[Sync] Deploy hook error:", err);
+        res.status(500).json({ error: err.message || "Deploy hook failed" });
       }
     });
 

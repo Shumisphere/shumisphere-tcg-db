@@ -41,6 +41,7 @@ export function parseLotteryHeuristically(text: string): HeuristicLottery[] {
 
         for (const line of lines) {
             // URL extraction
+            const urlMatch = line.match(/https?:\/\/[^\s<>"]+/);
             if (urlMatch) {
                 if (!sourceUrl) sourceUrl = urlMatch[0];
                 if (!imageUrl && urlMatch[0].match(/\.(jpg|jpeg|png|webp|gif)/i)) {

@@ -68,6 +68,7 @@ export const AdminDashboard: React.FC = () => {
     const [stats, setStats] = useState({ totalEvents: 0, activeEvents: 0, totalSources: 3 });
     const [isScraping, setIsScraping] = useState(false);
     const [isExtracting, setIsExtracting] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
     const [logs, setLogs] = useState<string[]>(() => {
         try {
             const saved = localStorage.getItem("admin_logs");
@@ -227,6 +228,21 @@ export const AdminDashboard: React.FC = () => {
 
     const addLog = (msg: string) => {
         setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 50));
+    };
+
+    const syncToFrontend = async () => {
+        setIsSyncing(true);
+        addLog("[SYSTEM] Triggering frontend sync...");
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/sync-frontend`, { method: "POST" });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+            addLog(`[SYSTEM] Sync complete: ${data.message}`);
+        } catch (e: any) {
+            addLog(`[ERROR] Sync failed: ${e.message}`);
+        } finally {
+            setIsSyncing(false);
+        }
     };
 
     const triggerScrape = async () => {
@@ -556,13 +572,21 @@ export const AdminDashboard: React.FC = () => {
                                 </button>
                             ))}
                         </div>
-                        <button 
+                        <button
                             onClick={triggerScrape}
                             disabled={isScraping}
                             className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-brand-accent hover:opacity-90 disabled:opacity-50 text-white rounded-lg transition-all font-bold text-[9px] md:text-[10px] uppercase tracking-widest shadow-lg shadow-brand-accent/20 cursor-pointer"
                         >
                             {isScraping ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Cpu className="w-4 h-4" />}
                             <span>Run Discovery</span>
+                        </button>
+                        <button
+                            onClick={syncToFrontend}
+                            disabled={isSyncing}
+                            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-lg transition-all font-bold text-[9px] md:text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-700/20 cursor-pointer"
+                        >
+                            {isSyncing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Globe className="w-4 h-4" />}
+                            <span>Sync to Frontend</span>
                         </button>
                     </div>
                 )}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Database, Edit, Trash2, X, Save, RefreshCw } from "lucide-react";
+import { Database, Edit, Trash2, X, Save, RefreshCw, Check } from "lucide-react";
 import { API_BASE_URL } from "../config";
 
 export function DatabaseExplorer() {
@@ -49,6 +49,21 @@ export function DatabaseExplorer() {
             const updated = await res.json();
             setLotteries(lotteries.map(l => l.id === updated.id ? { ...l, ...updated } : l));
             setEditingLottery(null);
+        } catch (e: any) {
+            alert(e.message);
+        }
+    };
+
+    const handleApprove = async (id: string) => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/lotteries/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ manuallyVerified: true, status: 'ACTIVE' })
+            });
+            if (!res.ok) throw new Error("Failed to approve");
+            const updated = await res.json();
+            setLotteries(lotteries.map(l => l.id === updated.id ? { ...l, ...updated } : l));
         } catch (e: any) {
             alert(e.message);
         }
@@ -114,12 +129,20 @@ export function DatabaseExplorer() {
                                         }`}>
                                             {l.status}
                                         </span>
+                                        {l.manuallyVerified && (
+                                            <span className="ml-1 text-emerald-500" title="Verified">✓</span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4 text-gray-500 hidden lg:table-cell text-[9px]">
                                         {formatDate(l.applicationStart)} - {formatDate(l.applicationEnd)}
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2 text-gray-600">
+                                            {!l.manuallyVerified && (
+                                                <button onClick={() => handleApprove(l.id)} className="p-1 hover:text-emerald-500 transition-colors" title="Approve & Publish">
+                                                    <Check className="w-3.5 h-3.5" />
+                                                </button>
+                                            )}
                                             <button onClick={() => setEditingLottery(l)} className="p-1 hover:text-brand-accent transition-colors">
                                                 <Edit className="w-3.5 h-3.5" />
                                             </button>
@@ -206,6 +229,29 @@ export function DatabaseExplorer() {
                                 </div>
                             </div>
                             
+                             <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Purchase Start</label>
+                                    <input 
+                                        type="text" 
+                                        value={editingLottery.purchaseStart ? editingLottery.purchaseStart.split('T')[0] : ''} 
+                                        onChange={e => setEditingLottery({...editingLottery, purchaseStart: e.target.value ? new Date(e.target.value).toISOString() : null})}
+                                        className="w-full bg-[#1a1a1c] border border-white/[0.05] rounded-lg px-3 py-2 text-xs text-white focus:border-brand-accent outline-none"
+                                        placeholder="YYYY-MM-DD"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Purchase End</label>
+                                    <input 
+                                        type="text" 
+                                        value={editingLottery.purchaseEnd ? editingLottery.purchaseEnd.split('T')[0] : ''} 
+                                        onChange={e => setEditingLottery({...editingLottery, purchaseEnd: e.target.value ? new Date(e.target.value).toISOString() : null})}
+                                        className="w-full bg-[#1a1a1c] border border-white/[0.05] rounded-lg px-3 py-2 text-xs text-white focus:border-brand-accent outline-none"
+                                        placeholder="YYYY-MM-DD"
+                                    />
+                                </div>
+                            </div>
+
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Result Date</label>
