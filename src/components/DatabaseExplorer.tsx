@@ -30,7 +30,8 @@ export function DatabaseExplorer() {
         if (!window.confirm("Are you sure you want to delete this lottery?")) return;
         try {
             const res = await fetch(`${API_BASE_URL}/api/lotteries/${id}`, { method: "DELETE" });
-            if (!res.ok) throw new Error("Failed to delete");
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
             setLotteries(lotteries.filter(l => l.id !== id));
         } catch (e: any) {
             alert(e.message);

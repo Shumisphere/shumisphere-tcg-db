@@ -265,8 +265,9 @@ async function startServer() {
         await prisma.generatedContent.deleteMany({ where: { eventId: req.params.id } });
         await prisma.lotteryEvent.delete({ where: { id: req.params.id } });
         res.json({ success: true });
-      } catch {
-        res.status(500).json({ error: "Failed to delete lottery" });
+      } catch (error: any) {
+        console.error("Delete lottery error:", error);
+        res.status(500).json({ error: error?.message || "Failed to delete lottery" });
       }
     });
 
