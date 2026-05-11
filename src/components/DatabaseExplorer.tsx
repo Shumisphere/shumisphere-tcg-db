@@ -9,6 +9,7 @@ export function DatabaseExplorer() {
     const [error, setError] = useState<string | null>(null);
     const [editingLottery, setEditingLottery] = useState<any | null>(null);
     const [editTcgCategoryId, setEditTcgCategoryId] = useState<string>("");
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
     const fetchLotteries = async () => {
         setLoading(true);
@@ -43,13 +44,14 @@ export function DatabaseExplorer() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm("Are you sure you want to delete this lottery?")) return;
         try {
             const res = await fetch(`${API_BASE_URL}/api/lotteries/${id}`, { method: "DELETE" });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-            setLotteries(lotteries.filter(l => l.id !== id));
+            setLotteries(prev => prev.filter(l => l.id !== id));
+            setConfirmDeleteId(null);
         } catch (e: any) {
+            setConfirmDeleteId(null);
             alert(e.message);
         }
     };
@@ -64,7 +66,7 @@ export function DatabaseExplorer() {
             });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-            setLotteries(lotteries.map(l => l.id === data.id ? { ...l, ...data } : l));
+            setLotteries(prev => prev.map(l => l.id === data.id ? { ...l, ...data } : l));
             setEditingLottery(null);
         } catch (e: any) {
             alert(e.message);
@@ -80,7 +82,7 @@ export function DatabaseExplorer() {
             });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data.error || "Failed to approve");
-            setLotteries(lotteries.map(l => l.id === data.id ? { ...l, ...data } : l));
+            setLotteries(prev => prev.map(l => l.id === data.id ? { ...l, ...data } : l));
         } catch (e: any) {
             alert(e.message);
         }
@@ -151,19 +153,37 @@ export function DatabaseExplorer() {
                                         {formatDate(l.applicationStart)} – {formatDate(l.applicationEnd)}
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <div className="flex items-center justify-end gap-2 text-gray-600">
-                                            {!l.manuallyVerified && (
-                                                <button onClick={() => handleApprove(l.id)} className="p-1 hover:text-emerald-500 transition-colors" title="Approve & Publish">
-                                                    <Check className="w-3.5 h-3.5" />
+                                        {confirmDeleteId === l.id ? (
+                                            <div className="flex items-center justify-end gap-2">
+                                                <span className="text-[9px] text-gray-400 uppercase">Delete?</span>
+                                                <button
+                                                    onClick={() => handleDelete(l.id)}
+                                                    className="px-2 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-[9px] font-bold uppercase transition-colors"
+                                                >
+                                                    Yes
                                                 </button>
-                                            )}
-                                            <button onClick={() => openEdit(l)} className="p-1 hover:text-brand-accent transition-colors">
-                                                <Edit className="w-3.5 h-3.5" />
-                                            </button>
-                                            <button onClick={() => handleDelete(l.id)} className="p-1 hover:text-rose-500 transition-colors">
-                                                <Trash2 className="w-3.5 h-3.5" />
-                                            </button>
-                                        </div>
+                                                <button
+                                                    onClick={() => setConfirmDeleteId(null)}
+                                                    className="px-2 py-1 bg-[#2a2a2c] hover:bg-[#3a3a3c] text-gray-400 rounded text-[9px] font-bold uppercase transition-colors"
+                                                >
+                                                    No
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center justify-end gap-2 text-gray-600">
+                                                {!l.manuallyVerified && (
+                                                    <button onClick={() => handleApprove(l.id)} className="p-1 hover:text-emerald-500 transition-colors" title="Approve & Publish">
+                                                        <Check className="w-3.5 h-3.5" />
+                                                    </button>
+                                                )}
+                                                <button onClick={() => openEdit(l)} className="p-1 hover:text-brand-accent transition-colors">
+                                                    <Edit className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button onClick={() => setConfirmDeleteId(l.id)} className="p-1 hover:text-rose-500 transition-colors">
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
