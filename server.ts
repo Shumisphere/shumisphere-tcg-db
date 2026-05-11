@@ -273,7 +273,15 @@ async function startServer() {
 
     app.patch("/api/lotteries/:id", async (req, res) => {
       try {
-        const { applicationStart, applicationEnd, resultDate, purchaseStart, purchaseEnd, notes, status, inventoryStatus, category, imageUrl, manuallyVerified } = req.body;
+        const {
+          applicationStart, applicationEnd, resultDate, purchaseStart, purchaseEnd,
+          notes, status, inventoryStatus, category, imageUrl, manuallyVerified,
+          setId, sourceUrl, productName, storeName
+        } = req.body;
+
+        const current = await prisma.lotteryEvent.findUnique({ where: { id: req.params.id } });
+        if (!current) return res.status(404).json({ error: "Not found" });
+
         const data: any = {};
         if (applicationStart !== undefined) data.applicationStart = applicationStart ? new Date(applicationStart) : null;
         if (applicationEnd !== undefined) data.applicationEnd = applicationEnd ? new Date(applicationEnd) : null;
@@ -286,15 +294,29 @@ async function startServer() {
         if (category !== undefined) data.category = category;
         if (imageUrl !== undefined) data.imageUrl = imageUrl;
         if (manuallyVerified !== undefined) data.manuallyVerified = manuallyVerified;
-        const updated = await prisma.lotteryEvent.update({
-          where: { id: req.params.id },
-          data,
-          include: { product: { include: { tcgCategory: true } }, store: true, set: true }
-        });
+        if (setId !== undefined) data.setId = setId || null;
+        if (sourceUrl !== undefined) data.sourceUrl = sourceUrl;
+
+        const ops: Promise<any>[] = [
+          prisma.lotteryEvent.update({
+            where: { id: req.params.id },
+            data,
+            include: { product: { include: { tcgCategory: true } }, store: true, set: true }
+          })
+        ];
+        if (productName !== undefined && current.productId)
+          ops.push(prisma.product.update({ where: { id: current.productId }, data: { productName } }));
+        if (storeName !== undefined && current.storeId)
+          ops.push(prisma.store.update({ where: { id: current.storeId }, data: { storeName } }));
+
+        const [updated] = await Promise.all(ops);
+        if (productName !== undefined && updated.product) updated.product.productName = productName;
+        if (storeName !== undefined && updated.store) updated.store.storeName = storeName;
+
         res.json(updated);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Update lottery error:", error);
-        res.status(500).json({ error: "Failed to update lottery" });
+        res.status(500).json({ error: error?.message || "Failed to update lottery" });
       }
     });
 

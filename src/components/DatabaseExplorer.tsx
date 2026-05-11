@@ -4,10 +4,12 @@ import { API_BASE_URL } from "../config";
 
 export function DatabaseExplorer() {
     const [lotteries, setLotteries] = useState<any[]>([]);
+    const [tcgCategories, setTcgCategories] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [editingLottery, setEditingLottery] = useState<any | null>(null);
-    
+    const [editTcgCategoryId, setEditTcgCategoryId] = useState<string>("");
+
     const fetchLotteries = async () => {
         setLoading(true);
         try {
@@ -22,9 +24,23 @@ export function DatabaseExplorer() {
         }
     };
 
+    const fetchCategories = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/tcg-categories`);
+            if (!res.ok) return;
+            setTcgCategories(await res.json());
+        } catch {}
+    };
+
     useEffect(() => {
         fetchLotteries();
+        fetchCategories();
     }, []);
+
+    const openEdit = (l: any) => {
+        setEditingLottery(l);
+        setEditTcgCategoryId(l.set?.tcgCategoryId || l.product?.tcgCategoryId || "");
+    };
 
     const handleDelete = async (id: string) => {
         if (!window.confirm("Are you sure you want to delete this lottery?")) return;
@@ -46,9 +62,9 @@ export function DatabaseExplorer() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(editingLottery)
             });
-            if (!res.ok) throw new Error("Failed to update");
-            const updated = await res.json();
-            setLotteries(lotteries.map(l => l.id === updated.id ? { ...l, ...updated } : l));
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+            setLotteries(lotteries.map(l => l.id === data.id ? { ...l, ...data } : l));
             setEditingLottery(null);
         } catch (e: any) {
             alert(e.message);
@@ -60,11 +76,11 @@ export function DatabaseExplorer() {
             const res = await fetch(`${API_BASE_URL}/api/lotteries/${id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ manuallyVerified: true, status: 'ACTIVE' })
+                body: JSON.stringify({ manuallyVerified: true, status: "ACTIVE" })
             });
-            if (!res.ok) throw new Error("Failed to approve");
-            const updated = await res.json();
-            setLotteries(lotteries.map(l => l.id === updated.id ? { ...l, ...updated } : l));
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || "Failed to approve");
+            setLotteries(lotteries.map(l => l.id === data.id ? { ...l, ...data } : l));
         } catch (e: any) {
             alert(e.message);
         }
@@ -75,6 +91,10 @@ export function DatabaseExplorer() {
         return new Date(dateString).toLocaleDateString();
     };
 
+    const inp = "w-full bg-[#1a1a1c] border border-white/[0.05] rounded-lg px-3 py-2 text-xs text-white focus:border-brand-accent outline-none";
+    const label = "block text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1";
+    const setsForCategory = tcgCategories.find(c => c.id === editTcgCategoryId)?.sets || [];
+
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             <div className="bg-[#0e0e11] border border-brand-border rounded-xl overflow-hidden shadow-2xl">
@@ -83,18 +103,13 @@ export function DatabaseExplorer() {
                         <Database className="w-4 h-4 text-brand-accent" />
                         <span>Database Explorer</span>
                     </h3>
-                    <button 
-                        onClick={fetchLotteries}
-                        className="p-1.5 bg-brand-accent/20 text-brand-accent hover:bg-brand-accent/30 rounded transition-all"
-                    >
-                        <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+                    <button onClick={fetchLotteries} className="p-1.5 bg-brand-accent/20 text-brand-accent hover:bg-brand-accent/30 rounded transition-all">
+                        <RefreshCw className={`w-3 h-3 ${loading ? "animate-spin" : ""}`} />
                     </button>
                 </div>
 
                 {error && (
-                    <div className="m-4 p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-lg">
-                        {error}
-                    </div>
+                    <div className="m-4 p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-lg">{error}</div>
                 )}
 
                 <div className="overflow-x-auto max-h-[800px] overflow-y-auto custom-scrollbar">
@@ -124,18 +139,16 @@ export function DatabaseExplorer() {
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`px-2 py-0.5 rounded font-bold uppercase text-[9px] ${
-                                            l.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 
-                                            l.status === 'UPCOMING' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' :
-                                            'bg-gray-500/10 text-gray-400 border border-gray-500/20'
+                                            l.status === "ACTIVE" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+                                            l.status === "UPCOMING" ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" :
+                                            "bg-gray-500/10 text-gray-400 border border-gray-500/20"
                                         }`}>
                                             {l.status}
                                         </span>
-                                        {l.manuallyVerified && (
-                                            <span className="ml-1 text-emerald-500" title="Verified">✓</span>
-                                        )}
+                                        {l.manuallyVerified && <span className="ml-1 text-emerald-500" title="Verified">✓</span>}
                                     </td>
                                     <td className="px-6 py-4 text-gray-500 hidden lg:table-cell text-[9px]">
-                                        {formatDate(l.applicationStart)} - {formatDate(l.applicationEnd)}
+                                        {formatDate(l.applicationStart)} – {formatDate(l.applicationEnd)}
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2 text-gray-600">
@@ -144,7 +157,7 @@ export function DatabaseExplorer() {
                                                     <Check className="w-3.5 h-3.5" />
                                                 </button>
                                             )}
-                                            <button onClick={() => setEditingLottery(l)} className="p-1 hover:text-brand-accent transition-colors">
+                                            <button onClick={() => openEdit(l)} className="p-1 hover:text-brand-accent transition-colors">
                                                 <Edit className="w-3.5 h-3.5" />
                                             </button>
                                             <button onClick={() => handleDelete(l.id)} className="p-1 hover:text-rose-500 transition-colors">
@@ -176,15 +189,73 @@ export function DatabaseExplorer() {
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
-                        
+
                         <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+
+                            {/* ── Product / Store ── */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Status</label>
-                                    <select 
-                                        value={editingLottery.status} 
-                                        onChange={e => setEditingLottery({...editingLottery, status: e.target.value})}
-                                        className="w-full bg-[#1a1a1c] border border-white/[0.05] rounded-lg px-3 py-2 text-xs text-white focus:border-brand-accent outline-none"
+                                    <label className={label}>Product Name</label>
+                                    <input
+                                        type="text"
+                                        value={editingLottery.productName ?? editingLottery.product?.productName ?? ""}
+                                        onChange={e => setEditingLottery({ ...editingLottery, productName: e.target.value })}
+                                        className={inp}
+                                    />
+                                </div>
+                                <div>
+                                    <label className={label}>Store Name</label>
+                                    <input
+                                        type="text"
+                                        value={editingLottery.storeName ?? editingLottery.store?.storeName ?? ""}
+                                        onChange={e => setEditingLottery({ ...editingLottery, storeName: e.target.value })}
+                                        className={inp}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* ── TCG Category + Set ── */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className={label}>TCG Category</label>
+                                    <select
+                                        value={editTcgCategoryId}
+                                        onChange={e => {
+                                            setEditTcgCategoryId(e.target.value);
+                                            setEditingLottery({ ...editingLottery, setId: null });
+                                        }}
+                                        className={inp}
+                                    >
+                                        <option value="">— None —</option>
+                                        {tcgCategories.map(c => (
+                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className={label}>Set</label>
+                                    <select
+                                        value={editingLottery.setId || ""}
+                                        onChange={e => setEditingLottery({ ...editingLottery, setId: e.target.value || null })}
+                                        className={inp}
+                                        disabled={!editTcgCategoryId}
+                                    >
+                                        <option value="">— No Set —</option>
+                                        {setsForCategory.map((s: any) => (
+                                            <option key={s.id} value={s.id}>{s.setName}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* ── Status / Type ── */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className={label}>Status</label>
+                                    <select
+                                        value={editingLottery.status}
+                                        onChange={e => setEditingLottery({ ...editingLottery, status: e.target.value })}
+                                        className={inp}
                                     >
                                         <option value="UPCOMING">UPCOMING</option>
                                         <option value="ACTIVE">ACTIVE</option>
@@ -193,11 +264,11 @@ export function DatabaseExplorer() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Category</label>
-                                    <select 
-                                        value={editingLottery.category} 
-                                        onChange={e => setEditingLottery({...editingLottery, category: e.target.value})}
-                                        className="w-full bg-[#1a1a1c] border border-white/[0.05] rounded-lg px-3 py-2 text-xs text-white focus:border-brand-accent outline-none"
+                                    <label className={label}>Type</label>
+                                    <select
+                                        value={editingLottery.category}
+                                        onChange={e => setEditingLottery({ ...editingLottery, category: e.target.value })}
+                                        className={inp}
                                     >
                                         <option value="TCG_LOTTERY">TCG LOTTERY</option>
                                         <option value="BONBON">BONBON</option>
@@ -207,47 +278,25 @@ export function DatabaseExplorer() {
                                 </div>
                             </div>
 
+                            {/* ── Dates ── */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">App Start (YYYY-MM-DD)</label>
-                                    <input 
-                                        type="text" 
-                                        value={editingLottery.applicationStart ? editingLottery.applicationStart.split('T')[0] : ''} 
-                                        onChange={e => setEditingLottery({...editingLottery, applicationStart: e.target.value ? new Date(e.target.value).toISOString() : null})}
-                                        className="w-full bg-[#1a1a1c] border border-white/[0.05] rounded-lg px-3 py-2 text-xs text-white focus:border-brand-accent outline-none"
+                                    <label className={label}>App Start (YYYY-MM-DD)</label>
+                                    <input
+                                        type="text"
+                                        value={editingLottery.applicationStart ? editingLottery.applicationStart.split("T")[0] : ""}
+                                        onChange={e => setEditingLottery({ ...editingLottery, applicationStart: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                                        className={inp}
                                         placeholder="YYYY-MM-DD"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">App End (YYYY-MM-DD)</label>
-                                    <input 
-                                        type="text" 
-                                        value={editingLottery.applicationEnd ? editingLottery.applicationEnd.split('T')[0] : ''} 
-                                        onChange={e => setEditingLottery({...editingLottery, applicationEnd: e.target.value ? new Date(e.target.value).toISOString() : null})}
-                                        className="w-full bg-[#1a1a1c] border border-white/[0.05] rounded-lg px-3 py-2 text-xs text-white focus:border-brand-accent outline-none"
-                                        placeholder="YYYY-MM-DD"
-                                    />
-                                </div>
-                            </div>
-                            
-                             <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Purchase Start</label>
-                                    <input 
-                                        type="text" 
-                                        value={editingLottery.purchaseStart ? editingLottery.purchaseStart.split('T')[0] : ''} 
-                                        onChange={e => setEditingLottery({...editingLottery, purchaseStart: e.target.value ? new Date(e.target.value).toISOString() : null})}
-                                        className="w-full bg-[#1a1a1c] border border-white/[0.05] rounded-lg px-3 py-2 text-xs text-white focus:border-brand-accent outline-none"
-                                        placeholder="YYYY-MM-DD"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Purchase End</label>
-                                    <input 
-                                        type="text" 
-                                        value={editingLottery.purchaseEnd ? editingLottery.purchaseEnd.split('T')[0] : ''} 
-                                        onChange={e => setEditingLottery({...editingLottery, purchaseEnd: e.target.value ? new Date(e.target.value).toISOString() : null})}
-                                        className="w-full bg-[#1a1a1c] border border-white/[0.05] rounded-lg px-3 py-2 text-xs text-white focus:border-brand-accent outline-none"
+                                    <label className={label}>App End (YYYY-MM-DD)</label>
+                                    <input
+                                        type="text"
+                                        value={editingLottery.applicationEnd ? editingLottery.applicationEnd.split("T")[0] : ""}
+                                        onChange={e => setEditingLottery({ ...editingLottery, applicationEnd: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                                        className={inp}
                                         placeholder="YYYY-MM-DD"
                                     />
                                 </div>
@@ -255,20 +304,44 @@ export function DatabaseExplorer() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Result Date</label>
-                                    <input 
-                                        type="text" 
-                                        value={editingLottery.resultDate ? editingLottery.resultDate.split('T')[0] : ''} 
-                                        onChange={e => setEditingLottery({...editingLottery, resultDate: e.target.value ? new Date(e.target.value).toISOString() : null})}
-                                        className="w-full bg-[#1a1a1c] border border-white/[0.05] rounded-lg px-3 py-2 text-xs text-white focus:border-brand-accent outline-none"
+                                    <label className={label}>Purchase Start</label>
+                                    <input
+                                        type="text"
+                                        value={editingLottery.purchaseStart ? editingLottery.purchaseStart.split("T")[0] : ""}
+                                        onChange={e => setEditingLottery({ ...editingLottery, purchaseStart: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                                        className={inp}
+                                        placeholder="YYYY-MM-DD"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Inventory Status</label>
-                                    <select 
-                                        value={editingLottery.inventoryStatus || "NO_INFO"} 
-                                        onChange={e => setEditingLottery({...editingLottery, inventoryStatus: e.target.value})}
-                                        className="w-full bg-[#1a1a1c] border border-white/[0.05] rounded-lg px-3 py-2 text-xs text-white focus:border-brand-accent outline-none"
+                                    <label className={label}>Purchase End</label>
+                                    <input
+                                        type="text"
+                                        value={editingLottery.purchaseEnd ? editingLottery.purchaseEnd.split("T")[0] : ""}
+                                        onChange={e => setEditingLottery({ ...editingLottery, purchaseEnd: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                                        className={inp}
+                                        placeholder="YYYY-MM-DD"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className={label}>Result Date</label>
+                                    <input
+                                        type="text"
+                                        value={editingLottery.resultDate ? editingLottery.resultDate.split("T")[0] : ""}
+                                        onChange={e => setEditingLottery({ ...editingLottery, resultDate: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                                        className={inp}
+                                        placeholder="YYYY-MM-DD"
+                                    />
+                                </div>
+                                <div>
+                                    <label className={label}>Inventory Status</label>
+                                    <select
+                                        value={editingLottery.inventoryStatus || "NO_INFO"}
+                                        onChange={e => setEditingLottery({ ...editingLottery, inventoryStatus: e.target.value })}
+                                        className={inp}
                                     >
                                         <option value="AVAILABLE">AVAILABLE</option>
                                         <option value="UNAVAILABLE">UNAVAILABLE</option>
@@ -276,24 +349,37 @@ export function DatabaseExplorer() {
                                     </select>
                                 </div>
                             </div>
-                            
+
+                            {/* ── URLs ── */}
                             <div>
-                                <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Image URL (Poster/Product)</label>
-                                <input 
-                                    type="text" 
-                                    value={editingLottery.imageUrl || ""} 
-                                    onChange={e => setEditingLottery({...editingLottery, imageUrl: e.target.value})}
-                                    className="w-full bg-[#1a1a1c] border border-white/[0.05] rounded-lg px-3 py-2 text-xs text-brand-accent font-mono focus:border-brand-accent outline-none"
+                                <label className={label}>Source URL</label>
+                                <input
+                                    type="text"
+                                    value={editingLottery.sourceUrl || ""}
+                                    onChange={e => setEditingLottery({ ...editingLottery, sourceUrl: e.target.value })}
+                                    className={`${inp} font-mono text-brand-accent`}
                                     placeholder="https://..."
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Notes</label>
-                                <textarea 
-                                    value={editingLottery.notes || ""} 
-                                    onChange={e => setEditingLottery({...editingLottery, notes: e.target.value})}
-                                    className="w-full bg-[#1a1a1c] border border-white/[0.05] rounded-lg px-3 py-2 text-xs text-white focus:border-brand-accent outline-none h-24 custom-scrollbar"
+                                <label className={label}>Image URL</label>
+                                <input
+                                    type="text"
+                                    value={editingLottery.imageUrl || ""}
+                                    onChange={e => setEditingLottery({ ...editingLottery, imageUrl: e.target.value })}
+                                    className={`${inp} font-mono text-brand-accent`}
+                                    placeholder="https://..."
+                                />
+                            </div>
+
+                            {/* ── Notes ── */}
+                            <div>
+                                <label className={label}>Notes</label>
+                                <textarea
+                                    value={editingLottery.notes || ""}
+                                    onChange={e => setEditingLottery({ ...editingLottery, notes: e.target.value })}
+                                    className={`${inp} h-24 custom-scrollbar`}
                                 />
                             </div>
                         </div>
