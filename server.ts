@@ -180,6 +180,69 @@ async function startServer() {
       }
     });
 
+    // ──────────────────────────────────────────────────────────────
+    // Scraper Ingest  (flat fields from tcg-lottery-tool)
+    // POST /api/ingest
+    // Body: { store_name, set_name, lottery_date, conditions, link, region }
+    // ──────────────────────────────────────────────────────────────
+    app.post("/api/ingest", async (req, res) => {
+      try {
+        const { store_name, set_name, lottery_date, conditions, link, region } = req.body;
+
+        // Resolve or create store
+        let store = await fuzzyFindStore(store_name || "Unknown Store");
+        if (!store) {
+          store = await prisma.store.create({
+            data: { storeName: store_name || "Unknown Store", region: region || "JP-WIDE" },
+          });
+        }
+
+        // Resolve or create product
+        const productName = set_name || "Unknown Product";
+        let product = await prisma.product.findFirst({ where: { productName: { contains: productName } } });
+        if (!product) {
+          product = await prisma.product.create({ data: { productName } });
+        }
+
+        // Dedup check
+        const existing = await prisma.lotteryEvent.findFirst({
+          where: { productId: product.id, storeId: store.id, sourceUrl: link || "(MANUAL)" },
+        });
+        if (existing) {
+          return res.json({ ...existing, _duplicate: true });
+        }
+
+        // Resolve Manual Ingest source
+        let manualSource = await prisma.source.findFirst({ where: { sourceName: "Manual Ingest" } });
+        if (!manualSource) {
+          manualSource = await prisma.source.create({
+            data: { sourceName: "Manual Ingest", sourceType: "MANUAL", domain: "local://manual-ingest", crawlFrequency: 0, active: true },
+          });
+        }
+
+        const event = await prisma.lotteryEvent.create({
+          data: {
+            productId:        product.id,
+            storeId:          store.id,
+            sourceId:         manualSource.id,
+            category:         "TCG_LOTTERY",
+            status:           "ACTIVE",
+            applicationStart: lottery_date ? new Date(lottery_date) : null,
+            sourceUrl:        link || "(MANUAL)",
+            notes:            conditions || null,
+            confidenceScore:  0.85,
+            manuallyVerified: false,
+            inventoryStatus:  "NO_INFO",
+          },
+        });
+
+        res.json(event);
+      } catch (error: any) {
+        console.error("[Ingest] Error:", error);
+        res.status(500).json({ error: error.message || "Ingest failed" });
+      }
+    });
+
     app.delete("/api/lotteries/:id", async (req, res) => {
       try {
         await prisma.generatedContent.deleteMany({ where: { eventId: req.params.id } });
