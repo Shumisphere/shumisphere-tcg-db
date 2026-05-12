@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Database, Edit, Trash2, X, Save, RefreshCw, Check } from "lucide-react";
 import { API_BASE_URL } from "../config";
+import { ImageUploadButton } from "./ImageUploadButton";
 
 export function DatabaseExplorer() {
     const [lotteries, setLotteries] = useState<any[]>([]);
@@ -384,13 +385,24 @@ export function DatabaseExplorer() {
 
                             <div>
                                 <label className={label}>Image URL</label>
-                                <input
-                                    type="text"
-                                    value={editingLottery.imageUrl || ""}
-                                    onChange={e => setEditingLottery({ ...editingLottery, imageUrl: e.target.value })}
-                                    className={`${inp} font-mono text-brand-accent`}
-                                    placeholder="https://..."
-                                />
+                                <div className="flex gap-2 items-center">
+                                    <input
+                                        type="text"
+                                        value={editingLottery.imageUrl || ""}
+                                        onChange={e => setEditingLottery({ ...editingLottery, imageUrl: e.target.value })}
+                                        className={`${inp} font-mono text-brand-accent flex-1`}
+                                        placeholder="https://... or upload below"
+                                    />
+                                    <ImageUploadButton onUpload={url => setEditingLottery({ ...editingLottery, imageUrl: url })} />
+                                </div>
+                                {editingLottery.imageUrl && (
+                                    <img
+                                        src={editingLottery.imageUrl}
+                                        alt="Preview"
+                                        className="mt-2 h-24 w-auto rounded-lg object-cover border border-brand-border"
+                                        onError={e => (e.currentTarget.style.display = "none")}
+                                    />
+                                )}
                             </div>
 
                             {/* ── Notes ── */}

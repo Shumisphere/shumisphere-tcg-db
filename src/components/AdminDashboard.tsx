@@ -27,6 +27,7 @@ import {
 import { DesignEngine } from "./DesignEngine";
 import { DatabaseExplorer } from "./DatabaseExplorer";
 import { IntakeTool } from "./IntakeTool";
+import { ImageUploadButton } from "./ImageUploadButton";
 import { API_BASE_URL } from "../config";
 
 interface ErrorBoundaryProps {
@@ -1198,12 +1199,23 @@ export const AdminDashboard: React.FC = () => {
                                                 <ExternalLink className="w-3 h-3" />
                                                 <span>Poster_Image_URL</span>
                                             </label>
-                                            <input 
-                                                value={manualEvent.imageUrl}
-                                                onChange={e => setManualEvent({...manualEvent, imageUrl: e.target.value})}
-                                                className="w-full bg-black/60 border border-brand-border rounded-xl p-4 text-xs text-brand-accent font-mono focus:border-brand-accent transition-all placeholder:text-gray-800"
-                                                placeholder="https://... (e.g. store poster or product image)"
-                                            />
+                                            <div className="flex gap-2 items-center">
+                                                <input
+                                                    value={manualEvent.imageUrl}
+                                                    onChange={e => setManualEvent({...manualEvent, imageUrl: e.target.value})}
+                                                    className="flex-1 bg-black/60 border border-brand-border rounded-xl p-4 text-xs text-brand-accent font-mono focus:border-brand-accent transition-all placeholder:text-gray-800"
+                                                    placeholder="https://... or upload"
+                                                />
+                                                <ImageUploadButton onUpload={url => setManualEvent({...manualEvent, imageUrl: url})} />
+                                            </div>
+                                            {manualEvent.imageUrl && (
+                                                <img
+                                                    src={manualEvent.imageUrl}
+                                                    alt="Preview"
+                                                    className="h-20 w-auto rounded-lg object-cover border border-brand-border"
+                                                    onError={e => (e.currentTarget.style.display = "none")}
+                                                />
+                                            )}
                                         </div>                                        {/* Specialized Fields based on Ingest Node */}
                                         {selectedIngestTerminal === "TCG_LOTTERY" && (
                                             <div className="grid grid-cols-2 gap-6 animate-in slide-in-from-top-2 duration-500">
