@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Zap, RefreshCw, CheckCircle, Loader2, XCircle, Clock, Download } from "lucide-react";
 import { API_BASE_URL } from "../config";
 
@@ -237,6 +237,16 @@ export const IntakeTool: React.FC = () => {
     const [category, setCategory] = useState("TCG_LOTTERY");
     const [status, setStatus] = useState<{ type: "success" | "error" | "dupe"; msg: string } | null>(null);
     const [history, setHistory] = useState<any[]>([]);
+    const [tcgCategories, setTcgCategories] = useState<any[]>([]);
+    const [selectedCategoryId, setSelectedCategoryId] = useState("");
+    const [selectedSetId, setSelectedSetId] = useState("");
+
+    useEffect(() => {
+        fetch(`${API_BASE_URL}/api/tcg-categories`)
+            .then(r => r.json())
+            .then(setTcgCategories)
+            .catch(() => {});
+    }, []);
 
     function extractInfo() {
         if (!input.trim()) return;
@@ -277,6 +287,8 @@ export const IntakeTool: React.FC = () => {
                     link: edited.link,
                     region: edited.region,
                     category,
+                    setId: selectedSetId || null,
+                    tcgCategoryId: selectedCategoryId || null,
                 }),
             });
             if (!res.ok) {
@@ -397,6 +409,46 @@ export const IntakeTool: React.FC = () => {
                                 </div>
                             ))}
                         </div>
+
+                        {/* Category & Set assignment — only for TCG_LOTTERY */}
+                        {category === "TCG_LOTTERY" && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-brand-border/30">
+                                <div>
+                                    <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
+                                        TCG Category
+                                    </label>
+                                    <select
+                                        className={`${inp} cursor-pointer`}
+                                        value={selectedCategoryId}
+                                        onChange={e => { setSelectedCategoryId(e.target.value); setSelectedSetId(""); }}
+                                    >
+                                        <option value="">— Select Category —</option>
+                                        {tcgCategories.map((cat: any) => (
+                                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
+                                        TCG Set
+                                    </label>
+                                    <select
+                                        className={`${inp} cursor-pointer disabled:opacity-40`}
+                                        value={selectedSetId}
+                                        onChange={e => setSelectedSetId(e.target.value)}
+                                        disabled={!selectedCategoryId}
+                                    >
+                                        <option value="">— Select Set —</option>
+                                        {tcgCategories
+                                            .find((c: any) => c.id === selectedCategoryId)
+                                            ?.sets?.map((s: any) => (
+                                                <option key={s.id} value={s.id}>{s.setName}</option>
+                                            ))}
+                                    </select>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="flex gap-3 pt-2">
                             <button
                                 onClick={() => setEdited(null)}

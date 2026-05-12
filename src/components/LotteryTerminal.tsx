@@ -497,31 +497,52 @@ export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON
                 )}
 
                 {view === "SETS" && (
-                    <motion.div 
+                    <motion.div
                         key="sets"
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
-                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                        className="space-y-4"
                     >
-                        {selectedCategory?.sets?.map((set: any) => (
-                            <button 
-                                key={set.id}
-                                onClick={() => handleSetClick(set)}
-                                className="bg-[#0e0e11] border border-brand-border rounded-xl p-4 flex items-center justify-between hover:border-brand-success/50 hover:bg-white/[0.02] transition-all group"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 bg-brand-success/10 rounded-lg flex items-center justify-center text-brand-success">
-                                        <Layers className="w-5 h-5" />
-                                    </div>
-                                    <div className="text-left">
-                                        <div className="text-sm font-bold text-white uppercase font-mono">{set.setName}</div>
-                                        <div className="text-[10px] text-gray-500 font-mono">Released: {set.releaseDate ? new Date(set.releaseDate).toLocaleDateString() : "Historical"}</div>
-                                    </div>
+                        <button
+                            onClick={() => {
+                                setSelectedSet(null);
+                                setView("LOTTERIES");
+                                fetchLotteries(selectedCategory?.id, undefined, currentTerminal!);
+                            }}
+                            className="w-full bg-[#0e0e11] border border-brand-border border-dashed rounded-xl p-4 flex items-center justify-between hover:border-brand-accent/50 hover:bg-white/[0.02] transition-all group"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-brand-accent/10 rounded-lg flex items-center justify-center text-brand-accent">
+                                    <LayoutGrid className="w-5 h-5" />
                                 </div>
-                                <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-brand-success transition-colors" />
-                            </button>
-                        ))}
+                                <div className="text-left">
+                                    <div className="text-sm font-bold text-white uppercase font-mono">View All Events</div>
+                                    <div className="text-[10px] text-gray-500 font-mono">Browse all lotteries in this category regardless of set</div>
+                                </div>
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-brand-accent transition-colors" />
+                        </button>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {selectedCategory?.sets?.map((set: any) => (
+                                <button
+                                    key={set.id}
+                                    onClick={() => handleSetClick(set)}
+                                    className="bg-[#0e0e11] border border-brand-border rounded-xl p-4 flex items-center justify-between hover:border-brand-success/50 hover:bg-white/[0.02] transition-all group"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 bg-brand-success/10 rounded-lg flex items-center justify-center text-brand-success">
+                                            <Layers className="w-5 h-5" />
+                                        </div>
+                                        <div className="text-left">
+                                            <div className="text-sm font-bold text-white uppercase font-mono">{set.setName}</div>
+                                            <div className="text-[10px] text-gray-500 font-mono">Released: {set.releaseDate ? new Date(set.releaseDate).toLocaleDateString() : "Historical"}</div>
+                                        </div>
+                                    </div>
+                                    <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-brand-success transition-colors" />
+                                </button>
+                            ))}
+                        </div>
                     </motion.div>
                 )}
 
