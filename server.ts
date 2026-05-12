@@ -187,18 +187,20 @@ async function startServer() {
     // ──────────────────────────────────────────────────────────────
     app.post("/api/ingest", async (req, res) => {
       try {
-        const { 
-          store_name, 
-          set_name, 
-          lottery_date, 
+        const {
+          store_name,
+          set_name,
+          lottery_date,
           application_end,
           result_date,
           purchase_start,
           purchase_end,
-          conditions, 
-          link, 
+          conditions,
+          link,
           region,
-          category 
+          category,
+          setId,
+          tcgCategoryId
         } = req.body;
 
         // Resolve or create store
@@ -213,14 +215,20 @@ async function startServer() {
         const productName = set_name || "Unknown Product";
         let product = await prisma.product.findFirst({ where: { productName: { contains: productName } } });
         if (!product) {
-          product = await prisma.product.create({ data: { productName } });
+          product = await prisma.product.create({ data: { productName, tcgCategoryId: tcgCategoryId || null } });
+        } else if (tcgCategoryId && !product.tcgCategoryId) {
+          product = await prisma.product.update({ where: { id: product.id }, data: { tcgCategoryId } });
         }
 
-        // Dedup check
+        // Dedup check — update setId/tcgCategoryId on existing event if we now have them
         const existing = await prisma.lotteryEvent.findFirst({
           where: { productId: product.id, storeId: store.id, sourceUrl: link || "(MANUAL)" },
         });
         if (existing) {
+          if (setId && !existing.setId) {
+            const updated = await prisma.lotteryEvent.update({ where: { id: existing.id }, data: { setId } });
+            return res.json({ ...updated, _duplicate: true });
+          }
           return res.json({ ...existing, _duplicate: true });
         }
 
@@ -247,6 +255,7 @@ async function startServer() {
             sourceUrl:        link || "(MANUAL)",
             notes:            conditions || null,
             region:           region || null,
+            setId:            setId || null,
             confidenceScore:  0.95,
             manuallyVerified: false,
             inventoryStatus:  "NO_INFO",
