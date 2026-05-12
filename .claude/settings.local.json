@@ -5,7 +5,12 @@
       "Bash(npm install *)",
       "Bash(npx prisma *)",
       "Bash(npx tsc *)",
-      "Bash(npx tsx *)"
+      "Bash(npx tsx *)",
+      "Bash(dir \"C:\\\\Users\\\\dwain\\\\OneDrive\\\\Documents\\\\lotteryiq_-tcg-intelligence\")",
+      "Bash(dir C:\\\\Users\\\\dwain\\\\Videos\\\\Japan Trend Tracker\\\\scraper *)",
+      "Bash(dir C:\\\\Users\\\\dwain\\\\Videos\\\\Japan Trend Tracker\\\\scraper\\\\src *)",
+      "Bash(dir C:\\\\Users\\\\dwain\\\\OneDrive\\\\Documents\\\\lotteryiq_-tcg-intelligence\\\\src\\\\components *)",
+      "Bash(grep -n \"fetch\\(\\\\`/api/\" src/components/AdminDashboard.tsx)"
     ]
   }
 }

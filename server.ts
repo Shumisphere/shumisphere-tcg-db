@@ -667,23 +667,31 @@ async function startServer() {
     });
 
     // ──────────────────────────────────────────────────────────────
-    // Frontend Sync (Cloudflare Pages deploy hook)
+    // Frontend Sync — bumps cacheVersion so clients drop stale cache
     // ──────────────────────────────────────────────────────────────
     app.post("/api/sync-frontend", async (_req, res) => {
-      const hookUrl = process.env.CLOUDFLARE_DEPLOY_HOOK;
-      if (!hookUrl) {
-        return res.status(200).json({
-          success: true,
-          message: "No deploy hook configured. Frontend reads live from API — no redeploy needed.",
-        });
-      }
       try {
-        const response = await fetch(hookUrl, { method: "POST" });
-        if (!response.ok) throw new Error(`Deploy hook returned HTTP ${response.status}`);
-        res.json({ success: true, message: "Cloudflare Pages deployment triggered." });
+        // Bump cacheVersion so the frontend knows to invalidate sessionStorage caches
+        const current = await prisma.systemConfig.findUnique({ where: { id: "singleton" } });
+        const layout = current ? JSON.parse(current.layout || "{}") : {};
+        layout.cacheVersion = (layout.cacheVersion || 0) + 1;
+        await prisma.systemConfig.upsert({
+          where: { id: "singleton" },
+          update: { layout: JSON.stringify(layout) },
+          create: { id: "singleton", theme: JSON.stringify({}), layout: JSON.stringify(layout) },
+        });
+
+        const hookUrl = process.env.CLOUDFLARE_DEPLOY_HOOK;
+        if (hookUrl) {
+          const response = await fetch(hookUrl, { method: "POST" });
+          if (!response.ok) throw new Error(`Deploy hook returned HTTP ${response.status}`);
+          return res.json({ success: true, message: "Live sync complete — Cloudflare Pages deployment triggered.", cacheVersion: layout.cacheVersion });
+        }
+
+        res.json({ success: true, message: "Live sync complete. New data is immediately available to all visitors.", cacheVersion: layout.cacheVersion });
       } catch (err: any) {
-        console.error("[Sync] Deploy hook error:", err);
-        res.status(500).json({ error: err.message || "Deploy hook failed" });
+        console.error("[Sync] Error:", err);
+        res.status(500).json({ error: err.message || "Sync failed" });
       }
     });
 

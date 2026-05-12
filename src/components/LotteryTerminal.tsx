@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Clock, ExternalLink, Calendar, MapPin, Store as StoreIcon, Package, CheckCircle2, AlertCircle, RefreshCw, ChevronRight, LayoutGrid, Database, Layers, Heart, Bell, Store, Activity, Plus, Search, WifiOff } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { ThemeProvider, useTheme } from "../context/ThemeContext";
@@ -45,6 +45,11 @@ function writeCache<T>(key: string, data: T) {
 
 export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON" | "TCG_LOTTERY" | "TCG_RESTOCK" | "SALES" }) {
     const { config } = useTheme();
+    const cacheVersionRef = useRef<number>(0);
+    useEffect(() => {
+        cacheVersionRef.current = (config.layout as any).cacheVersion || 0;
+    }, [config]);
+
     const [view, setView] = useState<"TERMINALS" | "CATEGORIES" | "SETS" | "LOTTERIES">("TERMINALS");
     const [currentTerminal, setCurrentTerminal] = useState<"BONBON" | "TCG_LOTTERY" | "TCG_RESTOCK" | "SALES" | null>(null);
     const [tcgCategories, setTcgCategories] = useState<any[]>([]);
@@ -81,7 +86,7 @@ export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON
     const fetchLotteries = useCallback(async (category?: string, set?: string, terminal?: string) => {
         setIsRefreshing(true);
         setFetchError(null);
-        const cacheKey = `${CACHE_KEY}_${terminal || ""}_${category || ""}_${set || ""}`;
+        const cacheKey = `${CACHE_KEY}_v${cacheVersionRef.current}_${terminal || ""}_${category || ""}_${set || ""}`;
         try {
             let url = `${API_BASE_URL}/api/lotteries`;
             const params = new URLSearchParams();

@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { DesignEngine } from "./DesignEngine";
 import { DatabaseExplorer } from "./DatabaseExplorer";
+import { IntakeTool } from "./IntakeTool";
 import { API_BASE_URL } from "../config";
 
 interface ErrorBoundaryProps {
@@ -83,7 +84,7 @@ export const AdminDashboard: React.FC = () => {
     }, [logs]);
     
     const [tcgCategories, setTcgCategories] = useState<any[]>([]);
-    const [activeTab, setActiveTab] = useState<'pipeline' | 'design' | 'sources' | 'database'>(() => {
+    const [activeTab, setActiveTab] = useState<'pipeline' | 'intake' | 'design' | 'sources' | 'database'>(() => {
         try {
             return (localStorage.getItem("admin_active_tab") as any) || 'pipeline';
         } catch (e) {
@@ -292,7 +293,7 @@ export const AdminDashboard: React.FC = () => {
 
     const updateSource = async (id: string, data: any) => {
         try {
-            await fetch(`/api/sources/${id}`, {
+            await fetch(`${API_BASE_URL}/api/sources/${id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data)
@@ -307,7 +308,7 @@ export const AdminDashboard: React.FC = () => {
 
     const deleteRawDocument = async (id: string) => {
         try {
-            const res = await fetch(`/api/raw-documents/${id}`, { method: "DELETE" });
+            const res = await fetch(`${API_BASE_URL}/api/raw-documents/${id}`, { method: "DELETE" });
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
                 throw new Error((data as any).error || `HTTP ${res.status}`);
@@ -354,7 +355,7 @@ export const AdminDashboard: React.FC = () => {
     const createSet = async () => {
         if (!newSetName || !selectedCategoryId) return;
         try {
-            await fetch(`/api/tcg-categories/${selectedCategoryId}/sets`, {
+            await fetch(`${API_BASE_URL}/api/tcg-categories/${selectedCategoryId}/sets`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ setName: newSetName })
@@ -458,7 +459,7 @@ export const AdminDashboard: React.FC = () => {
     const deleteCategory = async (id: string) => {
         setPendingDeleteCategoryId(null);
         try {
-            const res = await fetch(`/api/tcg-categories/${id}`, { method: "DELETE" });
+            const res = await fetch(`${API_BASE_URL}/api/tcg-categories/${id}`, { method: "DELETE" });
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
                 throw new Error((data as any).error || `HTTP ${res.status}`);
@@ -472,7 +473,7 @@ export const AdminDashboard: React.FC = () => {
 
     const deleteSet = async (categoryId: string, setId: string) => {
         try {
-            const res = await fetch(`/api/tcg-categories/${categoryId}/sets/${setId}`, { method: "DELETE" });
+            const res = await fetch(`${API_BASE_URL}/api/tcg-categories/${categoryId}/sets/${setId}`, { method: "DELETE" });
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
                 throw new Error((data as any).error || `HTTP ${res.status}`);
@@ -504,7 +505,19 @@ export const AdminDashboard: React.FC = () => {
                         {activeTab === 'pipeline' && <div className="h-0.5 w-full bg-brand-accent mt-1" />}
                     </button>
 
-                    <button 
+                    <button
+                        onClick={() => setActiveTab('intake')}
+                        className={`flex flex-col items-start gap-1 group transition-all shrink-0 ${activeTab === 'intake' ? 'opacity-100' : 'opacity-40 hover:opacity-100'}`}
+                    >
+                        <h2 className="text-sm md:text-xl font-bold font-mono uppercase tracking-tight flex items-center gap-2 text-white italic">
+                            <Zap className="w-4 h-4 md:w-5 md:h-5 text-brand-accent" />
+                            <span>Intake Tool</span>
+                        </h2>
+                        <p className="text-[8px] md:text-[10px] text-gray-500 font-mono uppercase tracking-widest hidden sm:block">Parse_Tweet / Push_to_DB</p>
+                        {activeTab === 'intake' && <div className="h-0.5 w-full bg-brand-accent mt-1" />}
+                    </button>
+
+                    <button
                         onClick={() => setActiveTab('design')}
                         className={`flex flex-col items-start gap-1 group transition-all shrink-0 ${activeTab === 'design' ? 'opacity-100' : 'opacity-40 hover:opacity-100'}`}
                     >
@@ -710,6 +723,11 @@ export const AdminDashboard: React.FC = () => {
                                 </table>
                             </div>
                         </div>
+                    </div>
+                )}
+                {activeTab === 'intake' && (
+                    <div key="intake">
+                        <IntakeTool />
                     </div>
                 )}
                 {activeTab === 'design' && (
