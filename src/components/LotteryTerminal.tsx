@@ -189,6 +189,35 @@ export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON
     const filtered = lotteries.filter(l => {
         if (filter === "ALL") return true;
         return l.status === filter;
+    }).sort((a, b) => {
+        const getCategory = (l: Lottery) => {
+            if (l.status === "CLOSED") return 3;
+            if (l.applicationEnd) return 1;
+            return 2;
+        };
+
+        const catA = getCategory(a);
+        const catB = getCategory(b);
+
+        if (catA !== catB) {
+            return catA - catB;
+        }
+
+        // Category 1: Active/Upcoming with deadline -> nearest ending first
+        if (catA === 1) {
+            const timeA = new Date(a.applicationEnd!).getTime();
+            const timeB = new Date(b.applicationEnd!).getTime();
+            return timeA - timeB;
+        }
+
+        // Category 3: Closed -> recently closed first (newest end date at top)
+        if (catA === 3) {
+            const timeA = a.applicationEnd ? new Date(a.applicationEnd).getTime() : 0;
+            const timeB = b.applicationEnd ? new Date(b.applicationEnd).getTime() : 0;
+            return timeB - timeA;
+        }
+
+        return 0; // Category 2: Keep ongoing order
     });
 
     const terminals = [
