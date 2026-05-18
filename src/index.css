@@ -5,10 +5,10 @@
   --font-sans: var(--font-sans, "Outfit", ui-sans-serif, system-ui, sans-serif);
   --font-mono: var(--font-mono, "JetBrains Mono", ui-monospace, SFMono-Regular, monospace);
   
-  --color-brand-bg: var(--color-brand-bg, #0a0a0b);
-  --color-brand-header: var(--color-brand-header, #0e0e0f);
-  --color-brand-sidebar: var(--color-brand-sidebar, #0c0c0d);
-  --color-brand-border: var(--color-brand-border, #2a2a2c);
+  --color-brand-bg: var(--color-brand-bg, #000000);
+  --color-brand-header: var(--color-brand-header, #000000);
+  --color-brand-sidebar: var(--color-brand-sidebar, #000000);
+  --color-brand-border: var(--color-brand-border, #1e1e20);
   --color-brand-accent: var(--color-brand-accent, #6366f1);
   --color-brand-success: var(--color-brand-success, #00ff9d);
   
@@ -26,7 +26,7 @@
 }
 
 body {
-  @apply bg-brand-bg text-[#e0e0e0] antialiased;
+  @apply bg-brand-bg text-white antialiased;
   font-feature-settings: "ss01", "ss02", "cv01", "cv02";
   background-image: var(--bg-image, none);
   background-size: cover;
@@ -41,7 +41,7 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0a0a0b;
+  background: #000000;
 }
 ::-webkit-scrollbar-thumb {
   background: #2a2a2c;

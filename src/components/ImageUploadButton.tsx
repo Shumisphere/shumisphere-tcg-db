@@ -27,7 +27,10 @@ export function ImageUploadButton({ onUpload, className = "" }: Props) {
                 method: "POST",
                 body: formData,
             });
-            if (!res.ok) throw new Error(`Upload failed (${res.status})`);
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData?.error?.message || `Upload failed (${res.status})`);
+            }
             const data = await res.json();
             onUpload(data.secure_url);
         } catch (err: any) {

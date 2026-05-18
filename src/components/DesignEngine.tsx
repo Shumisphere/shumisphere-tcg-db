@@ -7,6 +7,7 @@ export const DesignEngine: React.FC = () => {
   const [localTheme, setLocalTheme] = useState(config.theme);
   const [localLayout, setLocalLayout] = useState(config.layout);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<'presets' | 'colors' | 'typography' | 'tokens'>('presets');
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -103,9 +104,32 @@ export const DesignEngine: React.FC = () => {
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
         {/* Controls */}
-        <div className="xl:col-span-8 space-y-8">
+        <div className="xl:col-span-8 space-y-6">
+          <div className="flex items-center gap-2 bg-[#0e0e11] p-2 rounded-xl border border-brand-border overflow-x-auto no-scrollbar">
+            {[
+              { id: 'presets', label: 'Presets', icon: Sparkles },
+              { id: 'colors', label: 'Chroma Engine', icon: Palette },
+              { id: 'typography', label: 'Typography', icon: Type },
+              { id: 'tokens', label: 'Tokens', icon: Box },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
+                  activeTab === tab.id 
+                  ? 'bg-brand-accent text-white shadow-lg' 
+                  : 'text-gray-500 hover:text-white hover:bg-white/[0.05]'
+                }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+
           {/* Presets */}
-          <section className="bg-brand-header border border-brand-border rounded-xl overflow-hidden">
+          {activeTab === 'presets' && (
+          <section className="bg-brand-header border border-brand-border rounded-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
             <div className="p-4 border-b border-brand-border bg-white/[0.02] flex items-center gap-2 font-bold text-[10px] uppercase text-gray-400">
               <Sparkles className="w-3.5 h-3.5" />
               Intelligence Presets
@@ -128,9 +152,11 @@ export const DesignEngine: React.FC = () => {
               ))}
             </div>
           </section>
+          )}
 
           {/* Color Palette */}
-          <section className="bg-brand-header border border-brand-border rounded-xl overflow-hidden">
+          {activeTab === 'colors' && (
+          <section className="bg-brand-header border border-brand-border rounded-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
             <div className="p-4 border-b border-brand-border bg-white/[0.02] flex items-center gap-2 font-bold text-[10px] uppercase text-gray-400">
               <Palette className="w-3.5 h-3.5" />
               Chroma Engine
@@ -165,9 +191,11 @@ export const DesignEngine: React.FC = () => {
               ))}
             </div>
           </section>
+          )}
 
           {/* Typography */}
-          <section className="bg-brand-header border border-brand-border rounded-xl overflow-hidden">
+          {activeTab === 'typography' && (
+          <section className="bg-brand-header border border-brand-border rounded-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
             <div className="p-4 border-b border-brand-border bg-white/[0.02] flex items-center gap-2 font-bold text-[10px] uppercase text-gray-400">
               <Type className="w-3.5 h-3.5" />
               Typography Engine
@@ -213,9 +241,11 @@ export const DesignEngine: React.FC = () => {
               </div>
             </div>
           </section>
+          )}
 
           {/* Components */}
-          <section className="bg-brand-header border border-brand-border rounded-xl overflow-hidden">
+          {activeTab === 'tokens' && (
+          <section className="bg-brand-header border border-brand-border rounded-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
             <div className="p-4 border-b border-brand-border bg-white/[0.02] flex items-center gap-2 font-bold text-[10px] uppercase text-gray-400">
               <Box className="w-3.5 h-3.5" />
               Component Tokens
@@ -256,6 +286,7 @@ export const DesignEngine: React.FC = () => {
               </div>
             </div>
           </section>
+          )}
         </div>
 
         {/* Live Preview */}

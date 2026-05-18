@@ -35,10 +35,10 @@ interface ThemeContextType {
 
 const defaultTheme: ThemeConfig = {
   primaryColor: "#6366f1",
-  backgroundColor: "#0a0a0b",
-  headerColor: "#0e0e0f",
-  sidebarColor: "#0c0c0d",
-  borderColor: "#2a2a2c",
+  backgroundColor: "#000000",
+  headerColor: "#000000",
+  sidebarColor: "#000000",
+  borderColor: "#1e1e20",
   accentColor: "#6366f1",
   successColor: "#00ff9d",
   fontSans: "Outfit",

@@ -489,122 +489,79 @@ export const AdminDashboard: React.FC = () => {
 
     return (
         <ErrorBoundary>
-            <div className="space-y-6 md:space-y-8 max-w-6xl mx-auto pb-20 px-4 md:px-0">
-                {/* Rest of the component... */}
-
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-brand-border pb-6 gap-6">
-                <div className="flex items-center gap-4 md:gap-8 overflow-x-auto no-scrollbar w-full md:w-auto">
-                    <button 
-                        onClick={() => setActiveTab('pipeline')}
-                        className={`flex flex-col items-start gap-1 group transition-all shrink-0 ${activeTab === 'pipeline' ? 'opacity-100' : 'opacity-40 hover:opacity-100'}`}
-                    >
-                        <h2 className="text-sm md:text-xl font-bold font-mono uppercase tracking-tight flex items-center gap-2 text-white italic">
-                            <Cpu className="w-4 h-4 md:w-5 md:h-5 text-brand-accent" />
-                            <span>Pipeline Control</span>
-                        </h2>
-                        <p className="text-[8px] md:text-[10px] text-gray-500 font-mono uppercase tracking-widest hidden sm:block">Automation_Pipeline / Ingestion</p>
-                        {activeTab === 'pipeline' && <div className="h-0.5 w-full bg-brand-accent mt-1" />}
-                    </button>
-
-                    <button
-                        onClick={() => setActiveTab('intake')}
-                        className={`flex flex-col items-start gap-1 group transition-all shrink-0 ${activeTab === 'intake' ? 'opacity-100' : 'opacity-40 hover:opacity-100'}`}
-                    >
-                        <h2 className="text-sm md:text-xl font-bold font-mono uppercase tracking-tight flex items-center gap-2 text-white italic">
-                            <Zap className="w-4 h-4 md:w-5 md:h-5 text-brand-accent" />
-                            <span>Intake Tool</span>
-                        </h2>
-                        <p className="text-[8px] md:text-[10px] text-gray-500 font-mono uppercase tracking-widest hidden sm:block">Parse_Tweet / Push_to_DB</p>
-                        {activeTab === 'intake' && <div className="h-0.5 w-full bg-brand-accent mt-1" />}
-                    </button>
-
-                    <button
-                        onClick={() => setActiveTab('design')}
-                        className={`flex flex-col items-start gap-1 group transition-all shrink-0 ${activeTab === 'design' ? 'opacity-100' : 'opacity-40 hover:opacity-100'}`}
-                    >
-                        <h2 className="text-sm md:text-xl font-bold font-mono uppercase tracking-tight flex items-center gap-2 text-white italic">
-                            <Boxes className="w-4 h-4 md:w-5 md:h-5 text-brand-accent" />
-                            <span>Design Engine</span>
-                        </h2>
-                        <p className="text-[8px] md:text-[10px] text-gray-500 font-mono uppercase tracking-widest hidden sm:block">Platform_Branding / UX_Tokens</p>
-                        {activeTab === 'design' && <div className="h-0.5 w-full bg-brand-accent mt-1" />}
-                    </button>
-
-                    <button 
-                        onClick={() => setActiveTab('sources')}
-                        className={`flex flex-col items-start gap-1 group transition-all shrink-0 ${activeTab === 'sources' ? 'opacity-100' : 'opacity-40 hover:opacity-100'}`}
-                    >
-                        <h2 className="text-sm md:text-xl font-bold font-mono uppercase tracking-tight flex items-center gap-2 text-white italic">
-                            <Globe className="w-4 h-4 md:w-5 md:h-5 text-brand-accent" />
-                            <span>Sources</span>
-                        </h2>
-                        <p className="text-[8px] md:text-[10px] text-gray-500 font-mono uppercase tracking-widest hidden sm:block">Monitor_Nodes / Web_Crawl</p>
-                        {activeTab === 'sources' && <div className="h-0.5 w-full bg-brand-accent mt-1" />}
-                    </button>
-
-                    <button 
-                        onClick={() => setActiveTab('database')}
-                        className={`flex flex-col items-start gap-1 group transition-all shrink-0 ${activeTab === 'database' ? 'opacity-100' : 'opacity-40 hover:opacity-100'}`}
-                    >
-                        <h2 className="text-sm md:text-xl font-bold font-mono uppercase tracking-tight flex items-center gap-2 text-white italic">
-                            <Database className="w-4 h-4 md:w-5 md:h-5 text-brand-accent" />
-                            <span>Database</span>
-                        </h2>
-                        <p className="text-[8px] md:text-[10px] text-gray-500 font-mono uppercase tracking-widest hidden sm:block">Records_Master / Edit_Data</p>
-                        {activeTab === 'database' && <div className="h-0.5 w-full bg-brand-accent mt-1" />}
-                    </button>
-                </div>
-                
-                {activeTab === 'pipeline' && (
-                    <div className="flex items-center gap-2 w-full md:w-auto">
-                        <div className="flex bg-black/40 p-1 rounded-lg border border-brand-border gap-1 mr-2">
-                            {[
-                                { id: "TCG_LOTTERY", label: "LOTTERY" },
-                                { id: "TCG_RESTOCK", label: "RESTOCK" },
-                                { id: "SALES", label: "SALES" },
-                                { id: "BONBON", label: "BONBON" }
-                            ].map(t => (
-                                <button
-                                    key={t.id}
-                                    onClick={() => {
-                                        setSelectedIngestTerminal(t.id);
-                                        const currentCat = tcgCategories.find(c => c.id === selectedCategoryId);
-                                        const currentSet = currentCat?.sets?.find((s: any) => s.id === selectedSetId);
-                                        
-                                        setManualEvent(prev => ({
-                                            ...prev,
-                                            category: t.id,
-                                            tcgCategoryId: selectedCategoryId,
-                                            setId: selectedSetId,
-                                            productName: currentSet?.setName || prev.productName || ""
-                                        }));
-                                        setShowManualForm(true);
-                                    }}
-                                    className="px-3 py-1.5 hover:bg-brand-accent/20 text-[8px] font-black uppercase rounded transition-all text-gray-500 hover:text-brand-accent"
+            <div className="flex flex-col md:flex-row min-h-screen bg-brand-bg">
+                {/* Sidebar */}
+                <aside className="w-full md:w-64 border-r border-brand-border bg-[#0e0e11] p-4 md:p-6 shrink-0">
+                    <div className="space-y-8">
+                        <div>
+                            <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4 px-2">Navigation</h2>
+                            <div className="flex flex-col gap-1">
+                                <button 
+                                    onClick={() => setActiveTab('pipeline')}
+                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${activeTab === 'pipeline' ? 'bg-brand-accent/10 text-brand-accent' : 'text-gray-400 hover:text-white hover:bg-white/[0.02]'}`}
                                 >
-                                    + {t.label}
+                                    <Cpu className="w-4 h-4 shrink-0" />
+                                    <span className="text-sm font-bold">Dashboard</span>
                                 </button>
-                            ))}
+                                <button
+                                    onClick={() => setActiveTab('intake')}
+                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${activeTab === 'intake' ? 'bg-brand-accent/10 text-brand-accent' : 'text-gray-400 hover:text-white hover:bg-white/[0.02]'}`}
+                                >
+                                    <Zap className="w-4 h-4 shrink-0" />
+                                    <span className="text-sm font-bold">Add Entry</span>
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab('database')}
+                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${activeTab === 'database' ? 'bg-brand-accent/10 text-brand-accent' : 'text-gray-400 hover:text-white hover:bg-white/[0.02]'}`}
+                                >
+                                    <Database className="w-4 h-4 shrink-0" />
+                                    <span className="text-sm font-bold">Database</span>
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab('sources')}
+                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${activeTab === 'sources' ? 'bg-brand-accent/10 text-brand-accent' : 'text-gray-400 hover:text-white hover:bg-white/[0.02]'}`}
+                                >
+                                    <Globe className="w-4 h-4 shrink-0" />
+                                    <span className="text-sm font-bold">Sources</span>
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('design')}
+                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${activeTab === 'design' ? 'bg-brand-accent/10 text-brand-accent' : 'text-gray-400 hover:text-white hover:bg-white/[0.02]'}`}
+                                >
+                                    <Boxes className="w-4 h-4 shrink-0" />
+                                    <span className="text-sm font-bold">Design</span>
+                                </button>
+                            </div>
                         </div>
-                        <button
-                            onClick={triggerScrape}
-                            disabled={isScraping}
-                            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-brand-accent hover:opacity-90 disabled:opacity-50 text-white rounded-lg transition-all font-bold text-[9px] md:text-[10px] uppercase tracking-widest shadow-lg shadow-brand-accent/20 cursor-pointer"
-                        >
-                            {isScraping ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Cpu className="w-4 h-4" />}
-                            <span>Run Discovery</span>
-                        </button>
-                        <button
-                            onClick={syncToFrontend}
-                            disabled={isSyncing}
-                            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-lg transition-all font-bold text-[9px] md:text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-700/20 cursor-pointer"
-                        >
-                            {isSyncing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Globe className="w-4 h-4" />}
-                            <span>Sync to Frontend</span>
-                        </button>
+
+                        {activeTab === 'pipeline' && (
+                            <div>
+                                <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4 px-2">Quick Actions</h2>
+                                <div className="space-y-2">
+                                    <button
+                                        onClick={triggerScrape}
+                                        disabled={isScraping}
+                                        className="w-full flex items-center gap-2 px-4 py-2 bg-brand-accent hover:opacity-90 disabled:opacity-50 text-white rounded-lg transition-all text-xs font-bold"
+                                    >
+                                        {isScraping ? <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0" /> : <Cpu className="w-3.5 h-3.5 shrink-0" />}
+                                        <span>Run Discovery</span>
+                                    </button>
+                                    <button
+                                        onClick={syncToFrontend}
+                                        disabled={isSyncing}
+                                        className="w-full flex items-center gap-2 px-4 py-2 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-lg transition-all text-xs font-bold"
+                                    >
+                                        {isSyncing ? <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0" /> : <Globe className="w-3.5 h-3.5 shrink-0" />}
+                                        <span>Sync to Frontend</span>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                )}
-            </div>
+                </aside>
+
+                {/* Main Content Area */}
+                <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full">
 
             <div className="mt-6">
                 {activeTab === 'sources' && (
@@ -1103,6 +1060,10 @@ export const AdminDashboard: React.FC = () => {
                         </div>
                     </div>
                 )}
+                
+                {activeTab === 'design' && (
+                    <DesignEngine />
+                )}
             </div>
 
             {showManualForm && (
@@ -1535,6 +1496,7 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                 </div>
             )}
+                </main>
             </div>
         </ErrorBoundary>
     );
