@@ -132,12 +132,14 @@ export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON
         fetchRecentSignals();
         if (initialTerminal) {
             selectTerminal(initialTerminal);
+        } else {
+            fetchLotteries();
         }
 
         // Auto-refresh signals every 60s
         const interval = setInterval(fetchRecentSignals, 60000);
         return () => clearInterval(interval);
-    }, [initialTerminal]);
+    }, [initialTerminal, fetchLotteries]);
 
 
     const selectTerminal = (terminal: "BONBON" | "TCG_LOTTERY" | "TCG_RESTOCK" | "SWITCH2" | "ALL") => {
