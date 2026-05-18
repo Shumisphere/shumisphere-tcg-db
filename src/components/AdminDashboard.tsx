@@ -751,7 +751,7 @@ export const AdminDashboard: React.FC = () => {
                                     { id: "TCG_LOTTERY", label: "TCG_LOTTERIES", desc: "Standard lottery data", icon: Database, color: "text-indigo-400" },
                                     { id: "BONBON", label: "BONBON_FEED", desc: "Bonbon sticker stream", icon: Heart, color: "text-rose-400" },
                                     { id: "TCG_RESTOCK", label: "RESTOCK_INTEL", desc: "Inventory pulse", icon: RefreshCw, color: "text-emerald-400" },
-                                    { id: "SALES", label: "DEALER_STOCK", desc: "Global sales info", icon: Package, color: "text-amber-400" }
+                                    { id: "SWITCH2", label: "SWITCH_2_FEEDS", desc: "Nintendo Switch 2 lotteries", icon: Package, color: "text-amber-400" }
                                 ].map(t => (
                                     <button
                                         key={t.id}
@@ -1086,7 +1086,7 @@ export const AdminDashboard: React.FC = () => {
                                     {[
                                         { id: "TCG_LOTTERY", label: "Lottery" },
                                         { id: "TCG_RESTOCK", label: "Restock" },
-                                        { id: "SALES", label: "Sales" },
+                                        { id: "SWITCH2", label: "Switch 2" },
                                         { id: "BONBON", label: "Bonbon" }
                                     ].map(t => (
                                         <button
@@ -1201,7 +1201,7 @@ export const AdminDashboard: React.FC = () => {
                                             </div>
                                         )}
 
-                                        {(selectedIngestTerminal === "TCG_RESTOCK" || selectedIngestTerminal === "SALES") && (
+                                        {(selectedIngestTerminal === "TCG_RESTOCK" || selectedIngestTerminal === "SWITCH2") && (
                                             <div className="space-y-6 animate-in slide-in-from-top-2 duration-500">
                                                 <div className="space-y-2">
                                                     <label className="text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
@@ -1243,7 +1243,7 @@ export const AdminDashboard: React.FC = () => {
                                                 value={manualEvent.notes}
                                                 onChange={e => setManualEvent({...manualEvent, notes: e.target.value})}
                                                 className="w-full h-32 bg-black/60 border border-brand-border rounded-2xl p-5 text-sm text-white resize-none focus:border-brand-accent transition-all placeholder:text-gray-800"
-                                                placeholder={selectedIngestTerminal === "SALES" ? "Specify stock info, pricing, or regional availability..." : "Additional extraction context..."}
+                                                placeholder={selectedIngestTerminal === "SWITCH2" ? "Specify lottery requirements, store entries, or regional restrictions..." : "Additional extraction context..."}
                                             />
                                         </div>
 
@@ -1437,7 +1437,7 @@ export const AdminDashboard: React.FC = () => {
                                         { id: "TCG_LOTTERY", label: "TCG_LOTTERY" },
                                         { id: "BONBON", label: "BONBON" },
                                         { id: "TCG_RESTOCK", label: "RESTOCK" },
-                                        { id: "SALES", label: "SALES" }
+                                        { id: "SWITCH2", label: "SWITCH2" }
                                     ].map(t => (
                                         <button 
                                             key={t.id}

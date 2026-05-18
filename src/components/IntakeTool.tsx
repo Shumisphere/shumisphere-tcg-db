@@ -17,7 +17,7 @@ const CATEGORIES = [
     { id: "TCG_LOTTERY", label: "TCG Lottery" },
     { id: "TCG_RESTOCK", label: "Restock" },
     { id: "BONBON", label: "Bonbon" },
-    { id: "SALES", label: "Sales" },
+    { id: "SWITCH2", label: "Switch 2" },
 ];
 
 // ── Parser (supports tweet + blog table text) ────────────────────────────────

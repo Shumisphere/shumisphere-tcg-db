@@ -43,7 +43,7 @@ function writeCache<T>(key: string, data: T) {
     try { sessionStorage.setItem(key, JSON.stringify({ data, ts: Date.now() })); } catch { /* ignore */ }
 }
 
-export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON" | "TCG_LOTTERY" | "TCG_RESTOCK" | "SALES" }) {
+export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON" | "TCG_LOTTERY" | "TCG_RESTOCK" | "SWITCH2" }) {
     const { config } = useTheme();
     const cacheVersionRef = useRef<number>(0);
     useEffect(() => {
@@ -51,7 +51,7 @@ export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON
     }, [config]);
 
     const [view, setView] = useState<"FEED" | "CATEGORIES" | "LOTTERIES">("FEED");
-    const [currentTerminal, setCurrentTerminal] = useState<"BONBON" | "TCG_LOTTERY" | "TCG_RESTOCK" | "SALES" | null>(null);
+    const [currentTerminal, setCurrentTerminal] = useState<"BONBON" | "TCG_LOTTERY" | "TCG_RESTOCK" | "SWITCH2" | null>(null);
     const [tcgCategories, setTcgCategories] = useState<any[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<any>(null);
     const [selectedSet, setSelectedSet] = useState<any>(null);
@@ -140,7 +140,7 @@ export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON
     }, [initialTerminal]);
 
 
-    const selectTerminal = (terminal: "BONBON" | "TCG_LOTTERY" | "TCG_RESTOCK" | "SALES" | "ALL") => {
+    const selectTerminal = (terminal: "BONBON" | "TCG_LOTTERY" | "TCG_RESTOCK" | "SWITCH2" | "ALL") => {
         if (terminal === "ALL") {
             setCurrentTerminal(null);
             setView("FEED");
@@ -193,7 +193,7 @@ export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON
         { id: "TCG_LOTTERY", label: "TCG Lotteries", icon: Database, color: "text-indigo-400", bg: "bg-indigo-400/10" },
         { id: "BONBON", label: "Bonbon Lotteries", icon: LayoutGrid, color: "text-rose-400", bg: "bg-rose-400/10" },
         { id: "TCG_RESTOCK", label: "TCG Restocks", icon: RefreshCw, color: "text-emerald-400", bg: "bg-emerald-400/10" },
-        { id: "SALES", label: "Sales Info", icon: Package, color: "text-amber-400", bg: "bg-amber-400/10" },
+        { id: "SWITCH2", label: "Switch 2 Lotteries", icon: Package, color: "text-amber-400", bg: "bg-amber-400/10" },
     ] as const;
 
     return (
@@ -441,7 +441,7 @@ function LotteryCard({ lottery }: { lottery: Lottery; key?: string }) {
     const isEndingSoon = lottery.applicationEnd && new Date(lottery.applicationEnd).getTime() - Date.now() < 86400000;
     const isBonbon = (lottery as any).category === "BONBON";
     const isRestock = (lottery as any).category === "TCG_RESTOCK";
-    const isSale = (lottery as any).category === "SALES";
+    const isSale = (lottery as any).category === "SWITCH2";
     const cardStyles = isBonbon ? { borderRadius: "2rem" } : { borderRadius: config.theme.cardRadius };
     const fmt = (d?: string | null) => d ? new Date(d).toLocaleDateString("ja-JP", { year: "numeric", month: "short", day: "numeric" }) : null;
 

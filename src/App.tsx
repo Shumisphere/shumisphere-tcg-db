@@ -152,7 +152,7 @@ export default function App() {
             <Route path="/embed/tcg" element={<div className="p-4 bg-transparent min-h-screen"><LotteryTerminal initialTerminal="TCG_LOTTERY" /></div>} />
             <Route path="/embed/bonbon" element={<div className="p-4 bg-transparent min-h-screen"><LotteryTerminal initialTerminal="BONBON" /></div>} />
             <Route path="/embed/restock" element={<div className="p-4 bg-transparent min-h-screen"><LotteryTerminal initialTerminal="TCG_RESTOCK" /></div>} />
-            <Route path="/embed/sales" element={<div className="p-4 bg-transparent min-h-screen"><LotteryTerminal initialTerminal="SALES" /></div>} />
+            <Route path="/embed/switch2" element={<div className="p-4 bg-transparent min-h-screen"><LotteryTerminal initialTerminal="SWITCH2" /></div>} />
 
             {/* TERMINAL MODE (Cloudflare) */}
             {isTerminalMode && (
