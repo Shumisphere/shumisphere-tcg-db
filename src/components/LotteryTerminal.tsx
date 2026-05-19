@@ -239,8 +239,31 @@ export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON
         }
     }, [initialTerminal, fetchLotteries]);
 
-    // Filter out closed lotteries, and sort active signals by upcoming deadlines (nearest to now first)
-    const activeCarouselLotteries = lotteries.filter(l => l.status !== "CLOSED" && l.status !== "Closed");
+    // Filter out closed or passed application period lotteries to keep carousel strictly live & active
+    const activeCarouselLotteries = lotteries.filter(l => {
+        // 1. Exclude explicitly closed status
+        if (l.status === "CLOSED" || l.status === "Closed") return false;
+        
+        // 2. If it has an application deadline, it must be in the future
+        if (l.applicationEnd) {
+            const hasPassed = new Date(l.applicationEnd).getTime() <= Date.now();
+            if (hasPassed) return false;
+        }
+
+        // 3. If it has a purchase deadline, it must be in the future
+        if (l.purchaseEnd) {
+            const hasPassed = new Date(l.purchaseEnd).getTime() <= Date.now();
+            if (hasPassed) return false;
+        }
+        
+        // 4. Exclude other non-active statuses (e.g. Winner Announcement / Purchase Period)
+        if (l.status === "WINNER_ANNOUNCEMENT" || l.status === "PURCHASE_PERIOD") {
+            return false;
+        }
+        
+        return true;
+    });
+
     const sortedActiveLotteries = [...activeCarouselLotteries].sort((a, b) => {
         const timeA = a.applicationEnd ? new Date(a.applicationEnd).getTime() : Infinity;
         const timeB = b.applicationEnd ? new Date(b.applicationEnd).getTime() : Infinity;
