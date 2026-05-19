@@ -237,10 +237,6 @@ export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON
         } else {
             fetchLotteries();
         }
-
-        // Auto-refresh signals every 60s
-        const interval = setInterval(fetchRecentSignals, 60000);
-        return () => clearInterval(interval);
     }, [initialTerminal, fetchLotteries]);
 
     // Filter out closed lotteries, and sort active signals by upcoming deadlines (nearest to now first)
