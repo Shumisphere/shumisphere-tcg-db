@@ -43,6 +43,71 @@ function writeCache<T>(key: string, data: T) {
     try { sessionStorage.setItem(key, JSON.stringify({ data, ts: Date.now() })); } catch { /* ignore */ }
 }
 
+export function getLotteryLifecycleStatus(event: any): string {
+    const now = Date.now();
+    const appStart = event.applicationStart ? new Date(event.applicationStart).getTime() : 0;
+    const appEnd = event.applicationEnd ? new Date(event.applicationEnd).getTime() : 0;
+
+    // Real-world fallback spacing if fields are missing:
+    const resultDate = event.resultDate 
+        ? new Date(event.resultDate).getTime() 
+        : (appEnd ? appEnd + 2 * 24 * 60 * 60 * 1000 : 0);
+        
+    const purStart = event.purchaseStart 
+        ? new Date(event.purchaseStart).getTime() 
+        : (resultDate ? resultDate + 1 * 24 * 60 * 60 * 1000 : 0);
+        
+    const purEnd = event.purchaseEnd 
+        ? new Date(event.purchaseEnd).getTime() 
+        : (purStart ? purStart + 7 * 24 * 60 * 60 * 1000 : 0);
+
+    if (!appStart && !appEnd && !resultDate && !purStart && !purEnd) {
+        return event.status || "APPLICATION_OPEN";
+    }
+
+    if (purEnd && now > purEnd) {
+        return "CLOSED";
+    }
+
+    if (purStart && now >= purStart) {
+        return "PURCHASE_PERIOD";
+    }
+
+    if (appEnd && now > appEnd) {
+        return "WINNER_ANNOUNCEMENT";
+    }
+
+    if (appStart && now < appStart) {
+        return "UPCOMING";
+    }
+
+    if (appEnd && now <= appEnd) {
+        return "APPLICATION_OPEN";
+    }
+
+    return "CLOSED";
+}
+
+function getStatusPriority(status: string): number {
+    switch (status) {
+        case "APPLICATION_OPEN":
+        case "Accepting Applications":
+            return 1;
+        case "WINNER_ANNOUNCEMENT":
+        case "Winner Announcement":
+            return 2;
+        case "PURCHASE_PERIOD":
+        case "Purchase Period":
+        case "Purchase Deadline":
+            return 3;
+        case "UPCOMING":
+            return 4;
+        case "CLOSED":
+        default:
+            return 5;
+    }
+}
+
 export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON" | "TCG_LOTTERY" | "TCG_RESTOCK" | "SWITCH2" }) {
     const { config } = useTheme();
     const cacheVersionRef = useRef<number>(0);
@@ -63,6 +128,7 @@ export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [recentSignals, setRecentSignals] = useState<any[]>([]);
     const [isCarouselHovered, setIsCarouselHovered] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
 
 
     const fetchCategories = useCallback(async () => {
@@ -98,13 +164,21 @@ export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON
             const res = await fetch(url);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
-            setLotteries(data);
-            writeCache(cacheKey, data);
+            const processed = data.map((l: any) => ({
+                ...l,
+                status: getLotteryLifecycleStatus(l)
+            }));
+            setLotteries(processed);
+            writeCache(cacheKey, processed);
             setIsStale(false);
         } catch (error) {
             const cached = readCache<Lottery[]>(cacheKey);
             if (cached && cached.length > 0) {
-                setLotteries(cached);
+                const processed = cached.map((l: any) => ({
+                    ...l,
+                    status: getLotteryLifecycleStatus(l)
+                }));
+                setLotteries(processed);
                 setIsStale(true);
                 setFetchError("Backend unreachable — showing cached data");
             } else {
@@ -120,7 +194,11 @@ export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON
         try {
             const res = await fetch(`${API_BASE_URL}/api/lotteries?take=10`);
             const data = await res.json();
-            setRecentSignals(data);
+            const processed = data.map((l: any) => ({
+                ...l,
+                status: getLotteryLifecycleStatus(l)
+            }));
+            setRecentSignals(processed);
         } catch (e) {
             console.error("Fetch recent signals failed", e);
         }
@@ -143,6 +221,7 @@ export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON
 
 
     const selectTerminal = (terminal: "BONBON" | "TCG_LOTTERY" | "TCG_RESTOCK" | "SWITCH2" | "ALL") => {
+        setSearchQuery("");
         if (terminal === "ALL") {
             setCurrentTerminal(null);
             setView("FEED");
@@ -159,6 +238,7 @@ export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON
     };
 
     const handleCategoryClick = (cat: any) => {
+        setSearchQuery("");
         setSelectedCategory(cat);
         setSelectedSet(null);
         setView("LOTTERIES");
@@ -166,11 +246,13 @@ export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON
     };
 
     const handleSetClick = (set: any) => {
+        setSearchQuery("");
         setSelectedSet(set);
         fetchLotteries(selectedCategory.id, set?.id, currentTerminal!);
     };
 
     const resetToFeed = () => {
+        setSearchQuery("");
         setCurrentTerminal(null);
         setSelectedCategory(null);
         setSelectedSet(null);
@@ -179,6 +261,7 @@ export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON
     };
 
     const resetToCategories = () => {
+        setSearchQuery("");
         if (!currentTerminal) return resetToFeed();
         if (currentTerminal !== "TCG_LOTTERY") return resetToFeed();
         setSelectedCategory(null);
@@ -187,37 +270,74 @@ export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON
     };
 
     const filtered = lotteries.filter(l => {
-        if (filter === "ALL") return true;
-        return l.status === filter;
-    }).sort((a, b) => {
-        const getCategory = (l: Lottery) => {
-            if (l.status === "CLOSED") return 3;
-            if (l.applicationEnd) return 1;
-            return 2;
-        };
-
-        const catA = getCategory(a);
-        const catB = getCategory(b);
-
-        if (catA !== catB) {
-            return catA - catB;
+        // 1. Status Filter
+        if (view === "FEED") {
+            if (l.status === "CLOSED") return false;
+        } else {
+            if (filter !== "ALL") {
+                if (filter === "ACTIVE") {
+                    if (l.status !== "APPLICATION_OPEN" && l.status !== "WINNER_ANNOUNCEMENT" && l.status !== "PURCHASE_PERIOD") {
+                        return false;
+                    }
+                } else if (l.status !== filter) {
+                    return false;
+                }
+            }
         }
 
-        // Category 1: Active/Upcoming with deadline -> nearest ending first
-        if (catA === 1) {
-            const timeA = new Date(a.applicationEnd!).getTime();
-            const timeB = new Date(b.applicationEnd!).getTime();
+        // 2. Search Query Filter (Store, Product Name, Set Name, Category)
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            const storeMatch = l.store.storeName?.toLowerCase().includes(query);
+            const productMatch = l.product.productName?.toLowerCase().includes(query);
+            const setMatch = l.set?.setName?.toLowerCase().includes(query);
+            const franchiseMatch = l.product.franchise?.toLowerCase().includes(query);
+            const categoryMatch = l.product.tcgCategory?.name?.toLowerCase().includes(query);
+
+            return storeMatch || productMatch || setMatch || franchiseMatch || categoryMatch;
+        }
+
+        return true;
+    }).sort((a, b) => {
+        const priA = getStatusPriority(a.status);
+        const priB = getStatusPriority(b.status);
+
+        if (priA !== priB) {
+            return priA - priB;
+        }
+
+        // Within same priority, apply detailed sorting:
+        if (priA === 1) { // APPLICATION_OPEN -> nearest ending first
+            const timeA = a.applicationEnd ? new Date(a.applicationEnd).getTime() : Infinity;
+            const timeB = b.applicationEnd ? new Date(b.applicationEnd).getTime() : Infinity;
             return timeA - timeB;
         }
 
-        // Category 3: Closed -> recently closed first (newest end date at top)
-        if (catA === 3) {
-            const timeA = a.applicationEnd ? new Date(a.applicationEnd).getTime() : 0;
-            const timeB = b.applicationEnd ? new Date(b.applicationEnd).getTime() : 0;
+        if (priA === 2) { // WINNER_ANNOUNCEMENT -> nearest result date first
+            const timeA = a.resultDate ? new Date(a.resultDate).getTime() : Infinity;
+            const timeB = b.resultDate ? new Date(b.resultDate).getTime() : Infinity;
+            return timeA - timeB;
+        }
+
+        if (priA === 3) { // PURCHASE_PERIOD -> nearest purchase end/deadline first
+            const timeA = a.purchaseEnd ? new Date(a.purchaseEnd).getTime() : Infinity;
+            const timeB = b.purchaseEnd ? new Date(b.purchaseEnd).getTime() : Infinity;
+            return timeA - timeB;
+        }
+
+        if (priA === 4) { // UPCOMING -> nearest starting first
+            const timeA = a.applicationStart ? new Date(a.applicationStart).getTime() : Infinity;
+            const timeB = b.applicationStart ? new Date(b.applicationStart).getTime() : Infinity;
+            return timeA - timeB;
+        }
+
+        if (priA === 5) { // CLOSED -> recently closed first
+            const timeA = a.purchaseEnd ? new Date(a.purchaseEnd).getTime() : (a.applicationEnd ? new Date(a.applicationEnd).getTime() : 0);
+            const timeB = b.purchaseEnd ? new Date(b.purchaseEnd).getTime() : (b.applicationEnd ? new Date(b.applicationEnd).getTime() : 0);
             return timeB - timeA;
         }
 
-        return 0; // Category 2: Keep ongoing order
+        return 0;
     });
 
     const terminals = [
@@ -287,9 +407,29 @@ export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON
                         <span>Cached_Data</span>
                     </div>
                 )}
-                <div className="flex items-center justify-between md:justify-end gap-3 w-full md:w-auto mt-2 md:mt-0 relative z-10">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 w-full md:w-auto mt-2 md:mt-0 relative z-10">
+                    {(view === "FEED" || view === "LOTTERIES") && (
+                        <div className="relative w-full sm:w-60 flex items-center shrink-0">
+                            <Search className="absolute left-3 w-3.5 h-3.5 text-gray-500" />
+                            <input
+                                type="text"
+                                placeholder="Search store, set..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full pl-9 pr-8 py-1.5 bg-black border border-brand-border rounded-lg text-[11px] font-bold text-white placeholder-gray-600 focus:outline-none focus:border-brand-accent/50 transition-colors uppercase font-mono tracking-wider"
+                            />
+                            {searchQuery && (
+                                <button 
+                                    onClick={() => setSearchQuery("")} 
+                                    className="absolute right-2.5 text-gray-500 hover:text-white"
+                                >
+                                    <XCircle className="w-3.5 h-3.5" />
+                                </button>
+                            )}
+                        </div>
+                    )}
                     {view === "LOTTERIES" && (
-                        <div className="flex items-center gap-1 bg-black p-1 rounded-lg border border-brand-border overflow-x-auto no-scrollbar">
+                        <div className="flex items-center gap-1 bg-black p-1 rounded-lg border border-brand-border overflow-x-auto no-scrollbar shrink-0">
                             {["ALL", "ACTIVE", "UPCOMING", "CLOSED"].map(f => (
                                 <button
                                     key={f}
@@ -309,7 +449,7 @@ export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON
                             else if (view === "CATEGORIES") fetchCategories();
                             else fetchLotteries(selectedCategory?.id, selectedSet?.id, currentTerminal!);
                         }}
-                        className="p-2.5 bg-[#1a1a1c] border border-brand-border text-gray-500 hover:text-white rounded-lg transition-all"
+                        className="p-2.5 bg-[#1a1a1c] border border-brand-border text-gray-500 hover:text-white rounded-lg transition-all shrink-0"
                     >
                         <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
                     </button>
@@ -476,11 +616,62 @@ function LotteryCard({ lottery }: { lottery: Lottery; key?: string }) {
     const cardStyles = isBonbon ? { borderRadius: "2rem" } : { borderRadius: config.theme.cardRadius };
     const fmt = (d?: string | null) => d ? new Date(d).toLocaleDateString("ja-JP", { year: "numeric", month: "short", day: "numeric" }) : null;
 
-    const Badge = () => lottery.status === "ACTIVE" ? (
-        <span className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black border ${isBonbon ? "bg-rose-500/20 text-rose-300 border-rose-500/30" : "bg-[#1e2a1e] text-[#00ff9d] border-[#2d4d2d]"}`}>
-            <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isBonbon ? "bg-rose-400" : "bg-[#00ff9d]"}`} />ACTIVE
-        </span>
-    ) : <span className="px-2 py-0.5 rounded-full bg-[#1a1a1c] text-gray-500 text-[9px] font-bold border border-brand-border">{lottery.status}</span>;
+    const Badge = () => {
+        const s = lottery.status;
+        if (s === "APPLICATION_OPEN" || s === "Accepting Applications") {
+            return (
+                <span className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black border ${isBonbon ? "bg-rose-500/20 text-rose-300 border-rose-500/30" : "bg-[#1e2a1e] text-[#00ff9d] border-[#2d4d2d]"}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isBonbon ? "bg-rose-400" : "bg-[#00ff9d]"}`} />
+                    ACCEPTING APPLICATIONS
+                </span>
+            );
+        }
+        if (s === "WINNER_ANNOUNCEMENT" || s === "Winner Announcement") {
+            return (
+                <span className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black border ${isBonbon ? "bg-pink-500/20 text-pink-300 border-pink-500/30" : "bg-indigo-950/40 text-indigo-300 border-indigo-500/30"}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isBonbon ? "bg-pink-400" : "bg-[#6366f1]"}`} />
+                    WINNER ANNOUNCEMENT
+                </span>
+            );
+        }
+        if (s === "Purchase Deadline") {
+            return (
+                <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black border bg-rose-950/40 text-rose-400 border-rose-500/30 animate-pulse">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                    PURCHASE DEADLINE
+                </span>
+            );
+        }
+        if (s === "PURCHASE_PERIOD" || s === "Purchase Period") {
+            const isUrgent = lottery.purchaseEnd && (new Date(lottery.purchaseEnd).getTime() - Date.now() < 86400000);
+            if (isUrgent) {
+                return (
+                    <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black border bg-rose-950/40 text-rose-400 border-rose-500/30 animate-pulse">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                        PURCHASE DEADLINE
+                    </span>
+                );
+            }
+            return (
+                <span className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black border ${isBonbon ? "bg-amber-500/20 text-amber-300 border-amber-500/30" : "bg-amber-950/40 text-amber-300 border-amber-500/30"}`}>
+                    <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-amber-400" />
+                    PURCHASE PERIOD
+                </span>
+            );
+        }
+        if (s === "UPCOMING") {
+            return (
+                <span className="px-2 py-0.5 rounded-full bg-blue-950/30 text-blue-400 text-[9px] font-bold border border-blue-500/20">
+                    UPCOMING
+                </span>
+            );
+        }
+        return (
+            <span className="px-2 py-0.5 rounded-full bg-[#1a1a1c] text-gray-500 text-[9px] font-bold border border-brand-border">
+                {s === "CLOSED" ? "CLOSED" : s}
+            </span>
+        );
+    };
 
     return (
         <>

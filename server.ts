@@ -33,6 +33,22 @@ async function startServer() {
     app.use(cors());
     app.use(express.json({ limit: "2mb" }));
 
+    // Secure /admin and /api routes from direct raw Railway domain bypass in production
+    app.use((req, res, next) => {
+      if (req.path.startsWith("/admin") || req.path.startsWith("/api")) {
+        if (process.env.NODE_ENV === "production") {
+          // Allow public health checks to keep Railway deployments healthy
+          if (req.path === "/api/health") return next();
+
+          const jwtHeader = req.headers["cf-access-jwt-assertion"];
+          if (!jwtHeader) {
+            return res.status(403).send("Forbidden: Direct access to admin pages/APIs via railway.app is disabled. Please use your secure custom domain (e.g. admin.yourdomain.com/admin).");
+          }
+        }
+      }
+      next();
+    });
+
     // ──────────────────────────────────────────────────────────────
     // Health
     // ──────────────────────────────────────────────────────────────
@@ -58,14 +74,48 @@ async function startServer() {
     // Lotteries
     // ──────────────────────────────────────────────────────────────
     function getAutoStatus(event: any) {
-      const now = new Date();
-      const start = event.applicationStart ? new Date(event.applicationStart) : null;
-      const end = event.applicationEnd ? new Date(event.applicationEnd) : null;
+      const now = Date.now();
+      const appStart = event.applicationStart ? new Date(event.applicationStart).getTime() : 0;
+      const appEnd = event.applicationEnd ? new Date(event.applicationEnd).getTime() : 0;
 
-      if (end && now > end) return "CLOSED";
-      if (start && now < start) return "UPCOMING";
-      if (start && (!end || now <= end)) return "ACTIVE";
-      return event.status; // Fallback to current status
+      // Real-world fallback spacing if fields are missing:
+      const resultDate = event.resultDate 
+        ? new Date(event.resultDate).getTime() 
+        : (appEnd ? appEnd + 2 * 24 * 60 * 60 * 1000 : 0);
+        
+      const purStart = event.purchaseStart 
+        ? new Date(event.purchaseStart).getTime() 
+        : (resultDate ? resultDate + 1 * 24 * 60 * 60 * 1000 : 0);
+        
+      const purEnd = event.purchaseEnd 
+        ? new Date(event.purchaseEnd).getTime() 
+        : (purStart ? purStart + 7 * 24 * 60 * 60 * 1000 : 0);
+
+      if (!appStart && !appEnd && !resultDate && !purStart && !purEnd) {
+        return event.status || "APPLICATION_OPEN";
+      }
+
+      if (purEnd && now > purEnd) {
+        return "CLOSED";
+      }
+
+      if (purStart && now >= purStart) {
+        return "PURCHASE_PERIOD";
+      }
+
+      if (appEnd && now > appEnd) {
+        return "WINNER_ANNOUNCEMENT";
+      }
+
+      if (appStart && now < appStart) {
+        return "UPCOMING";
+      }
+
+      if (appEnd && now <= appEnd) {
+        return "APPLICATION_OPEN";
+      }
+
+      return "CLOSED";
     }
 
     app.get("/api/lotteries", async (req, res) => {
