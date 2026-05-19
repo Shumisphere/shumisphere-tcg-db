@@ -45,7 +45,7 @@ async function startServer() {
 
       // 2. All other API requests require a valid x-admin-key header
       if (req.path.startsWith("/api") && !isPublicGet) {
-        const adminKey = process.env.ADMIN_KEY || "shumi-admin-key-2026";
+        const adminKey = process.env.ADMIN_KEY || "Shumisphere-admin@1";
         const providedKey = req.headers["x-admin-key"] || req.query.admin_key;
 
         if (providedKey !== adminKey) {
@@ -85,16 +85,16 @@ async function startServer() {
       const appEnd = event.applicationEnd ? new Date(event.applicationEnd).getTime() : 0;
 
       // Real-world fallback spacing if fields are missing:
-      const resultDate = event.resultDate 
-        ? new Date(event.resultDate).getTime() 
+      const resultDate = event.resultDate
+        ? new Date(event.resultDate).getTime()
         : (appEnd ? appEnd + 2 * 24 * 60 * 60 * 1000 : 0);
-        
-      const purStart = event.purchaseStart 
-        ? new Date(event.purchaseStart).getTime() 
+
+      const purStart = event.purchaseStart
+        ? new Date(event.purchaseStart).getTime()
         : (resultDate ? resultDate + 1 * 24 * 60 * 60 * 1000 : 0);
-        
-      const purEnd = event.purchaseEnd 
-        ? new Date(event.purchaseEnd).getTime() 
+
+      const purEnd = event.purchaseEnd
+        ? new Date(event.purchaseEnd).getTime()
         : (purStart ? purStart + 7 * 24 * 60 * 60 * 1000 : 0);
 
       if (!appStart && !appEnd && !resultDate && !purStart && !purEnd) {
@@ -298,23 +298,23 @@ async function startServer() {
 
         const event = await prisma.lotteryEvent.create({
           data: {
-            productId:        product.id,
-            storeId:          store.id,
-            sourceId:         manualSource.id,
-            category:         category || "TCG_LOTTERY",
-            status:           "ACTIVE",
+            productId: product.id,
+            storeId: store.id,
+            sourceId: manualSource.id,
+            category: category || "TCG_LOTTERY",
+            status: "ACTIVE",
             applicationStart: lottery_date ? new Date(lottery_date) : null,
-            applicationEnd:   application_end ? new Date(application_end) : null,
-            resultDate:       result_date ? new Date(result_date) : null,
-            purchaseStart:    purchase_start ? new Date(purchase_start) : null,
-            purchaseEnd:      purchase_end ? new Date(purchase_end) : null,
-            sourceUrl:        link || "(MANUAL)",
-            notes:            conditions || null,
-            region:           region || null,
-            setId:            setId || null,
-            confidenceScore:  0.95,
+            applicationEnd: application_end ? new Date(application_end) : null,
+            resultDate: result_date ? new Date(result_date) : null,
+            purchaseStart: purchase_start ? new Date(purchase_start) : null,
+            purchaseEnd: purchase_end ? new Date(purchase_end) : null,
+            sourceUrl: link || "(MANUAL)",
+            notes: conditions || null,
+            region: region || null,
+            setId: setId || null,
+            confidenceScore: 0.95,
             manuallyVerified: false,
-            inventoryStatus:  "NO_INFO",
+            inventoryStatus: "NO_INFO",
           },
         });
 
@@ -485,7 +485,7 @@ async function startServer() {
         if (!config) {
           // Initialize default if missing
           config = await prisma.systemConfig.create({
-            data: { 
+            data: {
               id: "singleton",
               theme: JSON.stringify({
                 primaryColor: "#6366f1",
