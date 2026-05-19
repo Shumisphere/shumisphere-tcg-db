@@ -127,8 +127,30 @@ export function LotteryTerminal({ initialTerminal }: { initialTerminal?: "BONBON
     const [isStale, setIsStale] = useState(false);
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [recentSignals, setRecentSignals] = useState<any[]>([]);
-    const [isCarouselHovered, setIsCarouselHovered] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+
+    // Broadcaster for embedding page size updates to prevent double scrollbars in parent iframes
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const sendHeight = () => {
+            const height = document.body.scrollHeight || document.documentElement.scrollHeight;
+            window.parent.postMessage({ type: "set-iframe-height", height }, "*");
+        };
+        
+        sendHeight();
+
+        const observer = new ResizeObserver(() => {
+            sendHeight();
+        });
+        observer.observe(document.body);
+
+        const timeoutId = setTimeout(sendHeight, 1000);
+
+        return () => {
+            observer.disconnect();
+            clearTimeout(timeoutId);
+        };
+    }, [lotteries, view, currentTerminal, selectedCategory, selectedSet, filter, searchQuery]);
 
 
     const fetchCategories = useCallback(async () => {
