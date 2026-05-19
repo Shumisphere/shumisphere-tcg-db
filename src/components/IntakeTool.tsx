@@ -18,6 +18,7 @@ const CATEGORIES = [
     { id: "TCG_RESTOCK", label: "Restock" },
     { id: "BONBON", label: "Bonbon" },
     { id: "SWITCH2", label: "Switch 2" },
+    { id: "COLLECTIBLES", label: "Collectibles" },
 ];
 
 // ── Parser (supports tweet + blog table text) ────────────────────────────────
@@ -148,6 +149,7 @@ export const IntakeTool: React.FC = () => {
             const low = rawText.toLowerCase();
             if (low.includes("bonbon") || low.includes("ステッカー")) setCategory("BONBON");
             else if (low.includes("再販") || low.includes("入荷") || low.includes("restock")) setCategory("TCG_RESTOCK");
+            else if (low.includes("collectible") || low.includes("figure") || low.includes("toy") || low.includes("plush") || low.includes("フィギュア") || low.includes("ぬいぐるみ") || low.includes("ホビー")) setCategory("COLLECTIBLES");
             else setCategory("TCG_LOTTERY");
             setParsing(false);
             setShowParser(false);

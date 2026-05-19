@@ -295,6 +295,7 @@ export function DatabaseExplorer() {
                                         <option value="BONBON">BONBON</option>
                                         <option value="TCG_RESTOCK">TCG RESTOCK</option>
                                         <option value="SWITCH2">SWITCH2</option>
+                                        <option value="COLLECTIBLES">COLLECTIBLES</option>
                                     </select>
                                 </div>
                             </div>

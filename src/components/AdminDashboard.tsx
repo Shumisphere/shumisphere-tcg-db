@@ -885,12 +885,13 @@ export const AdminDashboard: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                                 {[
                                     { id: "TCG_LOTTERY", label: "TCG_LOTTERIES", desc: "Standard lottery data", icon: Database, color: "text-indigo-400" },
                                     { id: "BONBON", label: "BONBON_FEED", desc: "Bonbon sticker stream", icon: Heart, color: "text-rose-400" },
                                     { id: "TCG_RESTOCK", label: "RESTOCK_INTEL", desc: "Inventory pulse", icon: RefreshCw, color: "text-emerald-400" },
-                                    { id: "SWITCH2", label: "SWITCH_2_FEEDS", desc: "Nintendo Switch 2 lotteries", icon: Package, color: "text-amber-400" }
+                                    { id: "SWITCH2", label: "SWITCH_2_FEEDS", desc: "Nintendo Switch 2 lotteries", icon: Package, color: "text-amber-400" },
+                                    { id: "COLLECTIBLES", label: "COLLECTIBLES_FEED", desc: "Collectible drops & data", icon: Boxes, color: "text-purple-400" }
                                 ].map(t => (
                                     <button
                                         key={t.id}
@@ -915,6 +916,7 @@ export const AdminDashboard: React.FC = () => {
                                                     t.id === 'TCG_LOTTERY' ? 'bg-indigo-500 shadow-indigo-500' :
                                                     t.id === 'BONBON' ? 'bg-rose-500 shadow-rose-500' :
                                                     t.id === 'TCG_RESTOCK' ? 'bg-emerald-500 shadow-emerald-500' :
+                                                    t.id === 'COLLECTIBLES' ? 'bg-purple-500 shadow-purple-500' :
                                                     'bg-amber-500 shadow-amber-500'
                                                 }`} />
                                             )}
@@ -1226,7 +1228,8 @@ export const AdminDashboard: React.FC = () => {
                                         { id: "TCG_LOTTERY", label: "Lottery" },
                                         { id: "TCG_RESTOCK", label: "Restock" },
                                         { id: "SWITCH2", label: "Switch 2" },
-                                        { id: "BONBON", label: "Bonbon" }
+                                        { id: "BONBON", label: "Bonbon" },
+                                        { id: "COLLECTIBLES", label: "Collectibles" }
                                     ].map(t => (
                                         <button
                                             key={t.id}
@@ -1576,7 +1579,8 @@ export const AdminDashboard: React.FC = () => {
                                         { id: "TCG_LOTTERY", label: "TCG_LOTTERY" },
                                         { id: "BONBON", label: "BONBON" },
                                         { id: "TCG_RESTOCK", label: "RESTOCK" },
-                                        { id: "SWITCH2", label: "SWITCH2" }
+                                        { id: "SWITCH2", label: "SWITCH2" },
+                                        { id: "COLLECTIBLES", label: "COLLECTIBLES" }
                                     ].map(t => (
                                         <button 
                                             key={t.id}
