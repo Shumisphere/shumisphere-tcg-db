@@ -33,17 +33,23 @@ async function startServer() {
     app.use(cors());
     app.use(express.json({ limit: "2mb" }));
 
-    // Secure /admin and /api routes from direct raw Railway domain bypass in production
+    // Secure /api admin routes using a custom password key (ADMIN_KEY)
     app.use((req, res, next) => {
-      if (req.path.startsWith("/admin") || req.path.startsWith("/api")) {
-        if (process.env.NODE_ENV === "production") {
-          // Allow public health checks to keep Railway deployments healthy
-          if (req.path === "/api/health") return next();
+      // 1. Allow public GET routes so the home terminal homepage can read lotteries
+      const isPublicGet = req.method === "GET" && (
+        req.path === "/api/lotteries" ||
+        req.path === "/api/stats" ||
+        req.path === "/api/tcg-categories" ||
+        req.path === "/api/health"
+      );
 
-          const jwtHeader = req.headers["cf-access-jwt-assertion"];
-          if (!jwtHeader) {
-            return res.status(403).send("Forbidden: Direct access to admin pages/APIs via railway.app is disabled. Please use your secure custom domain (e.g. admin.yourdomain.com/admin).");
-          }
+      // 2. All other API requests require a valid x-admin-key header
+      if (req.path.startsWith("/api") && !isPublicGet) {
+        const adminKey = process.env.ADMIN_KEY || "shumi-admin-key-2026";
+        const providedKey = req.headers["x-admin-key"] || req.query.admin_key;
+
+        if (providedKey !== adminKey) {
+          return res.status(401).json({ error: "Unauthorized: Invalid admin key provided." });
         }
       }
       next();

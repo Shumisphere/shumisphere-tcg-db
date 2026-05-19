@@ -66,7 +66,35 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     }
 }
 
+// Global monkey-patch for fetch to automatically include the x-admin-key header on all API calls
+if (typeof window !== "undefined" && !(window as any).__fetch_patched) {
+    (window as any).__fetch_patched = true;
+    const originalFetch = window.fetch;
+    window.fetch = async function (input, init) {
+        const key = localStorage.getItem("admin_key") || "";
+        const urlStr = typeof input === "string" ? input : (input as any).url || "";
+        if (key && (urlStr.includes("/api/") || urlStr.startsWith("/api/"))) {
+            init = init || {};
+            const headers = new Headers(init.headers || {});
+            headers.set("x-admin-key", key);
+            init.headers = headers;
+        }
+        return originalFetch.call(this, input, init);
+    };
+}
+
 export const AdminDashboard: React.FC = () => {
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+        try {
+            return !!localStorage.getItem("admin_key");
+        } catch (e) {
+            return false;
+        }
+    });
+    const [passwordInput, setPasswordInput] = useState("");
+    const [authError, setAuthError] = useState<string | null>(null);
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
+
     const [stats, setStats] = useState({ totalEvents: 0, activeEvents: 0, totalSources: 3 });
     const [isScraping, setIsScraping] = useState(false);
     const [isExtracting, setIsExtracting] = useState(false);
@@ -177,20 +205,51 @@ export const AdminDashboard: React.FC = () => {
         localStorage.setItem("admin_manual_text", manualText);
     }, [manualText]);
 
+    const handleAuthFailure = () => {
+        localStorage.removeItem("admin_key");
+        setIsAuthenticated(false);
+    };
 
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!passwordInput.trim()) return;
+        setIsAuthenticating(true);
+        setAuthError(null);
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/stats`, {
+                headers: { "x-admin-key": passwordInput }
+            });
+            if (res.ok) {
+                localStorage.setItem("admin_key", passwordInput);
+                setIsAuthenticated(true);
+                // Trigger original fetches
+                fetchStats();
+                fetchTcgCategories();
+                fetchSources();
+                fetchRawDocuments();
+            } else {
+                setAuthError("INCORRECT ACCESS CODE");
+            }
+        } catch (err) {
+            setAuthError("CONNECTION REFUSED");
+        } finally {
+            setIsAuthenticating(false);
+        }
+    };
 
     useEffect(() => {
-        fetchStats();
-        fetchTcgCategories();
-        fetchSources();
-        fetchRawDocuments();
-    }, []);
-
-
+        if (isAuthenticated) {
+            fetchStats();
+            fetchTcgCategories();
+            fetchSources();
+            fetchRawDocuments();
+        }
+    }, [isAuthenticated]);
 
     const fetchRawDocuments = async () => {
         try {
             const res = await fetch(`${API_BASE_URL}/api/raw-documents`);
+            if (res.status === 401) return handleAuthFailure();
             const data = await res.json();
             setRawDocuments(data);
         } catch (e) {
@@ -201,6 +260,7 @@ export const AdminDashboard: React.FC = () => {
     const fetchStats = async () => {
         try {
             const res = await fetch(`${API_BASE_URL}/api/stats`);
+            if (res.status === 401) return handleAuthFailure();
             const data = await res.json();
             setStats(data);
         } catch (e) {
@@ -211,6 +271,7 @@ export const AdminDashboard: React.FC = () => {
     const fetchTcgCategories = async () => {
         try {
             const res = await fetch(`${API_BASE_URL}/api/tcg-categories`);
+            if (res.status === 401) return handleAuthFailure();
             const data = await res.json();
             setTcgCategories(data);
         } catch (e) {
@@ -221,6 +282,7 @@ export const AdminDashboard: React.FC = () => {
     const fetchSources = async () => {
         try {
             const res = await fetch(`${API_BASE_URL}/api/sources`);
+            if (res.status === 401) return handleAuthFailure();
             const data = await res.json();
             setSources(data);
         } catch (e) {
@@ -231,6 +293,7 @@ export const AdminDashboard: React.FC = () => {
     const addLog = (msg: string) => {
         setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 50));
     };
+
 
     const syncToFrontend = async () => {
         setIsSyncing(true);
@@ -486,6 +549,82 @@ export const AdminDashboard: React.FC = () => {
             addLog(`[ERROR] Failed to delete set: ${e.message}`);
         }
     };
+
+    if (!isAuthenticated) {
+        return (
+            <div className="min-h-screen bg-black flex items-center justify-center p-6 relative overflow-hidden font-mono">
+                {/* Background glow effects */}
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-accent/10 rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-accent/10 rounded-full blur-[100px] pointer-events-none" />
+                
+                {/* Cyberpunk GRID overlay */}
+                <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="max-w-md w-full bg-[#0e0e11] border border-brand-border p-8 rounded-2xl relative z-10 shadow-2xl shadow-black/80"
+                >
+                    <div className="space-y-8">
+                        {/* Header logo / Shield */}
+                        <div className="text-center space-y-4">
+                            <div className="w-16 h-16 bg-brand-accent/10 border border-brand-accent/30 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-brand-accent/10">
+                                <ShieldCheck className="w-8 h-8 text-brand-accent animate-pulse" />
+                            </div>
+                            <div>
+                                <h2 className="text-sm font-black text-white uppercase tracking-[0.25em]">SHUMISPHERE TCG</h2>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">SECURE TERMINAL GATEWAY</p>
+                            </div>
+                        </div>
+
+                        {/* Input form */}
+                        <form onSubmit={handleLogin} className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] text-gray-500 uppercase tracking-widest font-bold pl-1">ACCESS CODE</label>
+                                <div className="relative">
+                                    <input 
+                                        type="password"
+                                        value={passwordInput}
+                                        onChange={(e) => setPasswordInput(e.target.value)}
+                                        placeholder="••••••••••••••••"
+                                        className="w-full px-4 py-3 bg-black border border-brand-border rounded-xl text-sm text-center text-white tracking-widest placeholder-gray-800 focus:outline-none focus:border-brand-accent transition-all font-mono"
+                                        disabled={isAuthenticating}
+                                        autoFocus
+                                    />
+                                </div>
+                            </div>
+
+                            {authError && (
+                                <motion.div 
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="px-4 py-2 bg-rose-950/20 border border-rose-800/30 rounded-xl text-[9px] text-rose-400 font-bold text-center uppercase tracking-wider"
+                                >
+                                    ⚠ {authError}
+                                </motion.div>
+                            )}
+
+                            <button 
+                                type="submit"
+                                disabled={isAuthenticating || !passwordInput}
+                                className="w-full py-3 bg-brand-accent hover:opacity-90 disabled:opacity-50 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-brand-accent/20 flex items-center justify-center gap-2"
+                            >
+                                {isAuthenticating ? (
+                                    <>
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        <span>DECRYPTING...</span>
+                                    </>
+                                ) : (
+                                    <span>AUTHENTICATE</span>
+                                )}
+                            </button>
+                        </form>
+                    </div>
+                </motion.div>
+            </div>
+        );
+    }
 
     return (
         <ErrorBoundary>
